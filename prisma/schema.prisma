@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+enum Role {
+  DIRETOR      // acesso total ao sistema (inclui financeiro + acadêmico)
+  FINANCEIRA   // acesso exclusivo ao módulo financeiro (boletos, pagamentos)
+  COORDENADOR  // acesso acadêmico: cadastros, turmas, matrículas, chamada
+  PROFESSOR    // acesso às próprias matérias: notas, chamada, aprovação de matrículas
+  ALUNO        // acesso à própria área: perfil, matrículas, boletos
+}
+
+enum Status {
+  ATIVO
+  INATIVO
+}
+
+enum Turno {
+  MANHA
+  TARDE
+  NOITE
+}
+
+enum StatusAluno {
+  ATIVO
+  PENDENTE
+  INATIVO // soft-delete — preserva histórico de matrículas, notas, presencas
+}
+
+enum StatusPresenca {
+  PRESENTE
+  AUSENTE
+  ATRASADO
+}
+
+enum StatusMatricula {
+  PENDENTE   // solicitada pelo aluno, aguardando aprovação
+  APROVADA   // aprovada pelo professor (ou admin)
+  REJEITADA  // rejeitada
+}
+
+enum StatusBoleto {
+  PENDENTE   // gerado, aguardando pagamento
+  PAGO       // pagamento confirmado pelo admin
+  VENCIDO    // passou da data de vencimento (atualizado pelo cron)
+  CANCELADO  // cancelado manualmente pelo admin
+}
+
+// User = conta de acesso ao sistema (staff: DIRETOR, FINANCEIRA, COORDENADOR, PROFESSOR)
+// Alunos têm seu próprio model — acesso como role=ALUNO usa Aluno.email
+model User {
+  id             String    @id @default(cuid())
+  name           String
+  email          String    @unique
+  hashedPassword String
+  role           Role      @default(COORDENADOR)
+  createdAt      DateTime  @default(now())
+  materias       Materia[] // matérias que o professor leciona (instrutorId)
+}
+
+// Aluno = registro físico do estudante
+// PENDENTE = inscrito via /register, aguardando aprovação
+// ATIVO    = aprovado, pode se matricular em matérias
+// INATIVO  = soft-delete (status-based — histórico preservado)
+// Filtro padrão: { status: { not: 'INATIVO' } } em todas as listagens
+model Aluno {
+  id               String      @id @default(cuid())
+  nome             String
+  numeroCadastro   String?     @unique // gerado em aprovarAluno(): "CAD-{ano}-{00001}"
+  email            String?     @unique // e-mail próprio para login como ALUNO
+  emailResponsavel String?             // e-mail do responsável para alertas
+  dataNascimento   DateTime?
+  fotoUrl          String?
+  fotoPublicId     String?
+  status           StatusAluno @default(PENDENTE)
+  alertaEnviado    Boolean     @default(false)
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  matriculas       Matricula[]
+  presencas        Presenca[]
+  boletos          Boleto[]
+}
+
+// Curso = programa acadêmico (ex: "Engenharia de Software")
+// valorMensalidade null = sem cobrança
+model Curso {
+  id               String   @id @default(cuid())
+  nome             String
+  descricao        String?
+  status           Status   @default(ATIVO)
+  valorMensalidade Decimal? @db.Decimal(10, 2)
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  turmas           Turma[]
+  boletos          Boleto[]
+}
+
+// Turma = grupo dentro de um Curso (ex: "ES-2025-A, Manhã")
+model Turma {
+  id        String    @id @default(cuid())
+  nome      String
+  turno     Turno
+  anoLetivo String
+  cursoId   String
+  curso     Curso     @relation(fields: [cursoId], references: [id])
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  materias  Materia[]
+  presencas Presenca[] // chamada geral da turma
+  // Para listar matrículas de uma turma: turma.materias[*].matriculas
+}
+
+// Materia = disciplina dentro de uma Turma
+// instrutorId null = sem professor — apenas COORDENADOR/DIRETOR aprovam matrículas
+model Materia {
+  id          String      @id @default(cuid())
+  nome        String
+  descricao   String?
+  turmaId     String
+  turma       Turma       @relation(fields: [turmaId], references: [id])
+  instrutorId String?
+  instrutor   User?       @relation(fields: [instrutorId], references: [id])
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  matriculas  Matricula[]
+  presencas   Presenca[]
+}
+
+// Matricula = inscrição do aluno em uma Matéria específica
+// Bloco via Turma cria N Matriculas (uma por matéria)
+model Matricula {
+  id         String          @id @default(cuid())
+  alunoId    String
+  materiaId  String
+  status     StatusMatricula @default(PENDENTE)
+  dataInicio DateTime        @default(now())
+  aluno      Aluno           @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  materia    Materia         @relation(fields: [materiaId], references: [id], onDelete: Cascade)
+  notas      Nota[]
+
+  @@unique([alunoId, materiaId])
+}
+
+// Nota = avaliação lançada pelo Professor
+// Média em 3 níveis via notas brutas — NÃO média das médias (matematicamente distorcido)
+// Fórmula: sum(notas brutas do escopo) / count(notas)
+model Nota {
+  id          String    @id @default(cuid())
+  matriculaId String
+  valor       Decimal   @db.Decimal(4, 1)
+  descricao   String
+  data        DateTime  @default(now())
+  matricula   Matricula @relation(fields: [matriculaId], references: [id], onDelete: Cascade)
+}
+
+// Presenca = registro diário de chamada
+// turmaId preenchido, materiaId null  → chamada geral da turma
+// materiaId preenchido, turmaId null  → chamada de uma matéria específica
+// Sem @@unique com campos anuláveis (NULL != NULL no PostgreSQL)
+model Presenca {
+  id        String         @id @default(cuid())
+  alunoId   String
+  data      DateTime       // Date sem horário — armazenar como meia-noite UTC
+  status    StatusPresenca
+  turmaId   String?
+  materiaId String?
+  createdAt DateTime       @default(now())
+  updatedAt DateTime       @updatedAt
+  aluno     Aluno          @relation(fields: [alunoId], references: [id], onDelete: Cascade)
+  turma     Turma?         @relation(fields: [turmaId], references: [id])
+  materia   Materia?       @relation(fields: [materiaId], references: [id])
+}
+
+// Boleto = cobrança mensal proporcional
+// valor = curso.valorMensalidade / turma.materias.length * qtdMatriculasAprovadas
+// @@unique garante idempotência — tratar P2002 como sucesso no cron handler
+model Boleto {
+  id             String       @id @default(cuid())
+  alunoId        String
+  cursoId        String
+  valor          Decimal      @db.Decimal(10, 2)
+  mesReferencia  DateTime     // dia 1 do mês (ex: 2025-07-01 00:00:00 UTC)
+  dataVencimento DateTime     // geralmente dia 10 do mesmo mês
+  dataPagamento  DateTime?
+  status         StatusBoleto @default(PENDENTE)
+  codigoBarras   String       // simulado — gerado por gerarCodigoSimulado()
+  linhaDigitavel String       // simulado
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  aluno          Aluno        @relation(fields: [alunoId], references: [id])
+  curso          Curso        @relation(fields: [cursoId], references: [id])
+
+  @@unique([alunoId, cursoId, mesReferencia])
+}
