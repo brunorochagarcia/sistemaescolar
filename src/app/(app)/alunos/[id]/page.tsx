@@ -136,7 +136,19 @@ export default async function AlunoPerfilPage({
             </div>
           </div>
 
-          <div className="mt-4">
+          <div className="mt-4 flex flex-col gap-2">
+            <Link
+              href={`/alunos/${id}/notas`}
+              className="block w-full rounded-md border border-zinc-300 px-4 py-2 text-center text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            >
+              Ver boletim
+            </Link>
+            <Link
+              href={`/alunos/${id}/frequencia`}
+              className="block w-full rounded-md border border-zinc-300 px-4 py-2 text-center text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+            >
+              Ver frequência
+            </Link>
             <Link
               href={`/matriculas/nova`}
               className="block w-full rounded-md border border-zinc-300 px-4 py-2 text-center text-sm font-medium text-zinc-700 hover:bg-zinc-50"

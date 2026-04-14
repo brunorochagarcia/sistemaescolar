@@ -58,10 +58,16 @@ export default async function TurmaDetailPage({
         </div>
         <div className="flex items-center gap-2">
           <Link
+            href={`/turmas/${id}/chamada`}
+            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Chamada
+          </Link>
+          <Link
             href={`/turmas/${id}/notas`}
             className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
           >
-            Lançar notas
+            Notas
           </Link>
           <Link
             href={`/turmas/${id}/materias/nova`}
