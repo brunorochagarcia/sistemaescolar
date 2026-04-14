@@ -15,6 +15,8 @@ const navItems = [
   { href: '/cadastros/alunos', label: 'Alunos', roles: ['DIRETOR', 'COORDENADOR'] as Role[] },
   { href: '/cursos', label: 'Cursos', roles: ['DIRETOR', 'COORDENADOR'] as Role[] },
   { href: '/turmas', label: 'Turmas', roles: ['DIRETOR', 'COORDENADOR', 'PROFESSOR'] as Role[] },
+  { href: '/matriculas', label: 'Matrículas', roles: ['DIRETOR', 'COORDENADOR', 'PROFESSOR', 'ALUNO'] as Role[] },
+  { href: '/minhas-materias', label: 'Minhas Matérias', roles: ['PROFESSOR'] as Role[] },
   { href: '/financeiro', label: 'Financeiro', roles: ['DIRETOR', 'FINANCEIRA'] as Role[] },
 ]
 
