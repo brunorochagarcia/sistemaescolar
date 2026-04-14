@@ -3,19 +3,9 @@ import { prisma } from '@/lib/prisma'
 import { redirect, notFound } from 'next/navigation'
 import { podeGerirFinanceiro } from '@/lib/auth/permissions'
 import { BoletoActions } from '@/components/boleto-actions'
+import { PdfBoletoLoader } from '@/components/pdf-boleto-loader'
 import Link from 'next/link'
-import dynamic from 'next/dynamic'
 import type { StatusBoleto } from '@/generated/prisma/enums'
-
-// SSR: false obrigatório — @react-pdf/renderer usa APIs do browser
-const PdfBoleto = dynamic(() => import('@/components/pdf-boleto').then((m) => m.PdfBoleto), {
-  ssr: false,
-  loading: () => (
-    <span className="inline-flex items-center rounded-md bg-zinc-100 px-4 py-2 text-sm text-zinc-400">
-      Carregando PDF...
-    </span>
-  ),
-})
 
 export const metadata = { title: 'Boleto — Sistema Escolar' }
 
@@ -163,7 +153,7 @@ export default async function BoletoDetailPage({
 
         {/* Ações */}
         <div className="flex items-center justify-between border-t border-zinc-100 px-6 py-4">
-          <PdfBoleto boleto={pdfData} />
+          <PdfBoletoLoader boleto={pdfData} />
           <BoletoActions boletoId={boleto.id} status={boleto.status} />
         </div>
       </div>
