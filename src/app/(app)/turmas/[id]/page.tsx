@@ -56,12 +56,20 @@ export default async function TurmaDetailPage({
             {turma.curso.nome} · {turnoLabels[turma.turno]} · {turma.anoLetivo}
           </p>
         </div>
-        <Link
-          href={`/turmas/${id}/materias/nova`}
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-        >
-          + Nova matéria
-        </Link>
+        <div className="flex items-center gap-2">
+          <Link
+            href={`/turmas/${id}/notas`}
+            className="rounded-md border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-700 hover:bg-zinc-50"
+          >
+            Lançar notas
+          </Link>
+          <Link
+            href={`/turmas/${id}/materias/nova`}
+            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
+          >
+            + Nova matéria
+          </Link>
+        </div>
       </div>
 
       {turma.materias.length === 0 ? (
