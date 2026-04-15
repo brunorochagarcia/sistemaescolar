@@ -1,8 +1,9 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { redirect } from 'next/navigation'
-import { podeSolicitarMatricula, podeGerirMateria } from '@/lib/auth/permissions'
+import { podeSolicitarMatricula, podeGerirMateria, podeAprovarMatricula } from '@/lib/auth/permissions'
 import { MatriculaActions } from '@/components/matricula-actions'
+import { NovaMatriculaButton } from '@/components/nova-matricula-button'
 import Link from 'next/link'
 import type { StatusMatricula } from '@/generated/prisma/enums'
 
@@ -21,38 +22,58 @@ export default async function MatriculasPage({
 }) {
   const session = await auth()
   if (!session) redirect('/login')
-  // PROFESSOR pode ver e aprovar; ALUNO/COORDENADOR/DIRETOR podem solicitar
   if (!podeSolicitarMatricula(session.user.role) && !podeGerirMateria(session.user.role)) {
     redirect('/dashboard')
   }
 
   const { status, turmaId } = await searchParams
-
-  // PROFESSOR só vê matrículas das suas próprias matérias
   const isProfessor = session.user.role === 'PROFESSOR'
+  const aprovacaoImediata = podeAprovarMatricula(session.user.role)
 
-  const matriculas = await prisma.matricula.findMany({
-    where: {
-      ...(status ? { status: status as StatusMatricula } : {}),
-      ...(turmaId ? { materia: { turmaId } } : {}),
-      ...(isProfessor ? { materia: { instrutorId: session.user.id } } : {}),
-    },
-    orderBy: [{ status: 'asc' }, { dataInicio: 'desc' }],
-    select: {
-      id: true,
-      status: true,
-      dataInicio: true,
-      aluno: { select: { id: true, nome: true, numeroCadastro: true } },
-      materia: {
-        select: {
-          id: true,
-          nome: true,
-          instrutorId: true,
-          turma: { select: { id: true, nome: true } },
+  const [matriculas, alunos, materias, turmas] = await Promise.all([
+    prisma.matricula.findMany({
+      where: {
+        ...(status ? { status: status as StatusMatricula } : {}),
+        ...(turmaId ? { materia: { turmaId } } : {}),
+        ...(isProfessor ? { materia: { instrutorId: session.user.id } } : {}),
+      },
+      orderBy: [{ status: 'asc' }, { dataInicio: 'desc' }],
+      select: {
+        id: true,
+        status: true,
+        dataInicio: true,
+        aluno: { select: { id: true, nome: true, numeroCadastro: true } },
+        materia: {
+          select: {
+            id: true,
+            nome: true,
+            instrutorId: true,
+            turma: { select: { id: true, nome: true } },
+          },
         },
       },
-    },
-  })
+    }),
+    // Data for the "Nova matrícula" modal — only needed for non-professor roles
+    isProfessor
+      ? Promise.resolve([])
+      : prisma.aluno.findMany({
+          where: { status: 'ATIVO' },
+          orderBy: { nome: 'asc' },
+          select: { id: true, nome: true, numeroCadastro: true },
+        }),
+    isProfessor
+      ? Promise.resolve([])
+      : prisma.materia.findMany({
+          orderBy: { nome: 'asc' },
+          select: { id: true, nome: true, turma: { select: { id: true, nome: true } } },
+        }),
+    isProfessor
+      ? Promise.resolve([])
+      : prisma.turma.findMany({
+          orderBy: { nome: 'asc' },
+          select: { id: true, nome: true },
+        }),
+  ])
 
   const pendentes = matriculas.filter((m) => m.status === 'PENDENTE').length
 
@@ -71,12 +92,12 @@ export default async function MatriculasPage({
           </p>
         </div>
         {!isProfessor && (
-          <Link
-            href="/matriculas/nova"
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700"
-          >
-            + Nova matrícula
-          </Link>
+          <NovaMatriculaButton
+            alunos={alunos}
+            materias={materias}
+            turmas={turmas}
+            aprovacaoImediata={aprovacaoImediata}
+          />
         )}
       </div>
 
@@ -88,7 +109,7 @@ export default async function MatriculasPage({
             href={s ? `/matriculas?status=${s}` : '/matriculas'}
             className={`rounded-full px-3 py-1 text-xs font-medium transition-colors ${
               status === s || (!status && s === '')
-                ? 'bg-zinc-900 text-white'
+                ? 'bg-brand text-white'
                 : 'bg-zinc-100 text-zinc-500 hover:bg-zinc-200'
             }`}
           >
@@ -119,7 +140,6 @@ export default async function MatriculasPage({
             <tbody className="divide-y divide-zinc-100">
               {matriculas.map((m) => {
                 const badge = statusLabels[m.status]
-                // PROFESSOR só pode aprovar matérias que ele instrui e que têm instrutor
                 const podeAprovar =
                   session.user.role !== 'PROFESSOR' ||
                   (!!m.materia.instrutorId && m.materia.instrutorId === session.user.id)

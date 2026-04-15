@@ -5,6 +5,7 @@ import { podeGerirMateria } from '@/lib/auth/permissions'
 import { ChamadaForm } from '@/components/chamada-form'
 import Link from 'next/link'
 import type { StatusPresenca } from '@/generated/prisma/enums'
+import { DataFilter } from './data-filter'
 
 export const metadata = { title: 'Chamada — Sistema Escolar' }
 
@@ -151,17 +152,7 @@ export default async function ChamadaPage({
           {/* Seletor de data */}
           <div className="flex items-center gap-2">
             <span className="text-sm text-zinc-500">Data:</span>
-            <form method="GET">
-              {materiaId && <input type="hidden" name="materiaId" value={materiaId} />}
-              <input
-                type="date"
-                name="data"
-                defaultValue={dataSelecionada}
-                max={hoje}
-                onChange={(e) => e.currentTarget.form?.submit()}
-                className="rounded-md border border-zinc-300 px-3 py-1.5 text-sm outline-none focus:border-zinc-500"
-              />
-            </form>
+            <DataFilter dataSelecionada={dataSelecionada} hoje={hoje} materiaId={materiaId} />
           </div>
 
           {/* Form de chamada */}

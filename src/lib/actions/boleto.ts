@@ -228,7 +228,7 @@ export async function enviarEmailBoleto(formData: FormData): Promise<ActionResul
     await resend.emails.send({
       from: env.RESEND_FROM_EMAIL,
       to: destinatarios,
-      subject: `[EscolaFull] Boleto ${mesLabel} — ${boleto.curso.nome}`,
+      subject: `[Sistema Escolar] Boleto ${mesLabel} — ${boleto.curso.nome}`,
       html: `
         <p>Olá, ${boleto.aluno.nome}!</p>
         <p>Seu boleto de <strong>${mesLabel}</strong> referente ao curso <strong>${boleto.curso.nome}</strong> está disponível.</p>
@@ -237,7 +237,7 @@ export async function enviarEmailBoleto(formData: FormData): Promise<ActionResul
           <li>Vencimento: <strong>${boleto.dataVencimento.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}</strong></li>
         </ul>
         <p><a href="${linkBoleto}">Visualizar e imprimir boleto</a></p>
-        <p>Atenciosamente,<br/>Equipe EscolaFull</p>
+        <p>Atenciosamente,<br/>Equipe Sistema Escolar</p>
       `,
     })
   } catch (err) {

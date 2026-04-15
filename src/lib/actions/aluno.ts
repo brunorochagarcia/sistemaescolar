@@ -3,10 +3,14 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { podeAprovarAluno } from '@/lib/auth/permissions'
+import bcrypt from 'bcryptjs'
+import { revalidatePath } from 'next/cache'
 import {
   registrarAlunoSchema,
   aprovarAlunoSchema,
   excluirAlunoSchema,
+  editarAlunoSchema,
+  criarAlunoAdminSchema,
 } from '@/lib/schemas/aluno'
 
 type ActionResult<T = undefined> =
@@ -161,6 +165,82 @@ export async function excluirAluno(formData: FormData): Promise<ActionResult> {
     return { ok: true }
   } catch (err) {
     console.error('[excluirAluno]', err)
+    return { ok: false, error: 'Erro interno. Tente novamente.' }
+  }
+}
+
+// ─── Editar Aluno (DIRETOR / COORDENADOR only) ───────────────────────────────
+export async function editarAluno(formData: FormData): Promise<ActionResult> {
+  const session = await auth()
+  if (!session) return { ok: false, error: 'Não autenticado.' }
+  if (!podeAprovarAluno(session.user.role)) return { ok: false, error: 'Sem permissão.' }
+
+  const parsed = editarAlunoSchema.safeParse({
+    alunoId:          formData.get('alunoId'),
+    nome:             formData.get('nome'),
+    email:            formData.get('email'),
+    emailResponsavel: formData.get('emailResponsavel') ?? '',
+    dataNascimento:   formData.get('dataNascimento') ?? '',
+  })
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' }
+
+  const { alunoId, nome, email, emailResponsavel, dataNascimento } = parsed.data
+
+  const existe = await prisma.aluno.findUnique({ where: { id: alunoId }, select: { id: true } })
+  if (!existe) return { ok: false, error: 'Aluno não encontrado.' }
+
+  try {
+    await prisma.aluno.update({
+      where: { id: alunoId },
+      data: { nome, email, emailResponsavel: emailResponsavel ?? null, dataNascimento: dataNascimento ? new Date(dataNascimento) : null },
+    })
+    revalidatePath('/cadastros/alunos')
+    return { ok: true }
+  } catch (err: unknown) {
+    const e = err as { code?: string }
+    if (e.code === 'P2002') return { ok: false, error: 'Este e-mail já está em uso.' }
+    console.error('[editarAluno]', err)
+    return { ok: false, error: 'Erro interno. Tente novamente.' }
+  }
+}
+
+// ─── Criar Aluno direto como ATIVO (DIRETOR / COORDENADOR only) ──────────────
+export async function criarAlunoAdmin(
+  formData: FormData
+): Promise<ActionResult<{ id: string; numeroCadastro: string }>> {
+  const session = await auth()
+  if (!session) return { ok: false, error: 'Não autenticado.' }
+  if (!podeAprovarAluno(session.user.role)) return { ok: false, error: 'Sem permissão.' }
+
+  const parsed = criarAlunoAdminSchema.safeParse({
+    nome:             formData.get('nome'),
+    email:            formData.get('email'),
+    senha:            formData.get('senha'),
+    emailResponsavel: formData.get('emailResponsavel') ?? '',
+    dataNascimento:   formData.get('dataNascimento') ?? '',
+  })
+  if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' }
+
+  const { nome, email, senha, emailResponsavel, dataNascimento } = parsed.data
+  const hashedPassword = await bcrypt.hash(senha, 10)
+
+  try {
+    const year = new Date().getFullYear()
+    const result = await prisma.$transaction(async (tx) => {
+      const count = await tx.aluno.count({ where: { numeroCadastro: { startsWith: `CAD-${year}-` } } })
+      const numeroCadastro = `CAD-${year}-${String(count + 1).padStart(5, '0')}`
+      const aluno = await tx.aluno.create({
+        data: { nome, email, hashedPassword, emailResponsavel: emailResponsavel ?? null, dataNascimento: dataNascimento ? new Date(dataNascimento) : null, status: 'ATIVO', numeroCadastro },
+        select: { id: true, numeroCadastro: true },
+      })
+      return aluno
+    })
+    revalidatePath('/cadastros/alunos')
+    return { ok: true, data: { id: result.id, numeroCadastro: result.numeroCadastro! } }
+  } catch (err: unknown) {
+    const e = err as { code?: string }
+    if (e.code === 'P2002') return { ok: false, error: 'Este e-mail já está cadastrado.' }
+    console.error('[criarAlunoAdmin]', err)
     return { ok: false, error: 'Erro interno. Tente novamente.' }
   }
 }

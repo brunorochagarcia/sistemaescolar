@@ -33,7 +33,7 @@ export function BoletoActions({ boletoId, status }: BoletoActionsProps) {
       <button
         onClick={() => run(enviarEmailBoleto)}
         disabled={isPending || status === 'CANCELADO'}
-        className="rounded-md border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50 disabled:opacity-40"
+        className="rounded-xl bg-brand-light px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light/80 disabled:opacity-40"
       >
         Enviar e-mail
       </button>
@@ -41,7 +41,7 @@ export function BoletoActions({ boletoId, status }: BoletoActionsProps) {
         <button
           onClick={() => run(marcarPago)}
           disabled={isPending}
-          className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          className="rounded-xl bg-brand px-3 py-1 text-xs font-medium text-white hover:bg-brand/90 disabled:opacity-50"
         >
           Marcar pago
         </button>
@@ -50,7 +50,7 @@ export function BoletoActions({ boletoId, status }: BoletoActionsProps) {
         <button
           onClick={() => run(cancelarBoleto, 'Cancelar este boleto?')}
           disabled={isPending}
-          className="rounded-md border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+          className="rounded-xl border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
         >
           Cancelar
         </button>

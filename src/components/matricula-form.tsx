@@ -27,11 +27,14 @@ interface MatriculaFormProps {
   alunos: Aluno[]
   materias: Materia[]
   turmas: Turma[]
-  // Se true, o formulário usa criarMatriculaAprovada (bypass para COORDENADOR/DIRETOR)
   aprovacaoImediata?: boolean
+  onSuccess?: () => void
+  onCancel?: () => void
 }
 
-export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = false }: MatriculaFormProps) {
+const inputCls = 'rounded-xl border border-zinc-200 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/20'
+
+export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = false, onSuccess, onCancel }: MatriculaFormProps) {
   const router = useRouter()
   const [error, setError] = useState<string | null>(null)
   const [success, setSuccess] = useState<string | null>(null)
@@ -51,7 +54,12 @@ export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = fa
         result = await solicitarMatriculaTurma(formData)
         if (result.ok) {
           setSuccess('Matrículas solicitadas com sucesso!')
-          router.push('/matriculas')
+          if (onSuccess) {
+            router.refresh()
+            onSuccess()
+          } else {
+            router.push('/matriculas')
+          }
           return
         }
       } else if (aprovacaoImediata) {
@@ -61,8 +69,13 @@ export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = fa
       }
 
       if (result.ok) {
-        router.push('/matriculas')
-        router.refresh()
+        if (onSuccess) {
+          router.refresh()
+          onSuccess()
+        } else {
+          router.push('/matriculas')
+          router.refresh()
+        }
       } else {
         setError(result.error ?? 'Erro desconhecido.')
       }
@@ -70,16 +83,14 @@ export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = fa
   }
 
   return (
-    <div className="flex flex-col gap-6">
+    <div className="flex flex-col gap-4">
       {/* Toggle de modo */}
-      <div className="flex gap-1 rounded-lg border border-zinc-200 p-1">
+      <div className="flex gap-1 rounded-xl border border-zinc-200 p-1">
         <button
           type="button"
           onClick={() => setModo('materia')}
-          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-            modo === 'materia'
-              ? 'bg-zinc-900 text-white'
-              : 'text-zinc-500 hover:text-zinc-900'
+          className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+            modo === 'materia' ? 'bg-brand text-white' : 'text-zinc-500 hover:text-zinc-900'
           }`}
         >
           Por matéria
@@ -87,10 +98,8 @@ export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = fa
         <button
           type="button"
           onClick={() => setModo('turma')}
-          className={`flex-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors ${
-            modo === 'turma'
-              ? 'bg-zinc-900 text-white'
-              : 'text-zinc-500 hover:text-zinc-900'
+          className={`flex-1 rounded-lg px-3 py-1.5 text-sm font-medium transition-colors ${
+            modo === 'turma' ? 'bg-brand text-white' : 'text-zinc-500 hover:text-zinc-900'
           }`}
         >
           Turma inteira
@@ -98,17 +107,11 @@ export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = fa
       </div>
 
       <form onSubmit={handleSubmit} className="flex flex-col gap-4">
-        {/* Aluno */}
         <div className="flex flex-col gap-1">
-          <label htmlFor="alunoId" className="text-sm font-medium text-zinc-700">
+          <label className="text-sm font-medium text-zinc-700">
             Aluno <span className="text-red-500">*</span>
           </label>
-          <select
-            id="alunoId"
-            name="alunoId"
-            required
-            className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
-          >
+          <select name="alunoId" required className={inputCls}>
             <option value="">Selecione um aluno</option>
             {alunos.map((a) => (
               <option key={a.id} value={a.id}>
@@ -118,18 +121,12 @@ export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = fa
           </select>
         </div>
 
-        {/* Matéria ou Turma */}
         {modo === 'materia' ? (
           <div className="flex flex-col gap-1">
-            <label htmlFor="materiaId" className="text-sm font-medium text-zinc-700">
+            <label className="text-sm font-medium text-zinc-700">
               Matéria <span className="text-red-500">*</span>
             </label>
-            <select
-              id="materiaId"
-              name="materiaId"
-              required
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
-            >
+            <select name="materiaId" required className={inputCls}>
               <option value="">Selecione uma matéria</option>
               {materias.map((m) => (
                 <option key={m.id} value={m.id}>
@@ -140,20 +137,13 @@ export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = fa
           </div>
         ) : (
           <div className="flex flex-col gap-1">
-            <label htmlFor="turmaId" className="text-sm font-medium text-zinc-700">
+            <label className="text-sm font-medium text-zinc-700">
               Turma <span className="text-red-500">*</span>
             </label>
-            <select
-              id="turmaId"
-              name="turmaId"
-              required
-              className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
-            >
+            <select name="turmaId" required className={inputCls}>
               <option value="">Selecione uma turma</option>
               {turmas.map((t) => (
-                <option key={t.id} value={t.id}>
-                  {t.nome}
-                </option>
+                <option key={t.id} value={t.id}>{t.nome}</option>
               ))}
             </select>
             <p className="text-xs text-zinc-400">
@@ -163,30 +153,30 @@ export function MatriculaForm({ alunos, materias, turmas, aprovacaoImediata = fa
         )}
 
         {error && (
-          <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+          <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
         )}
         {success && (
-          <p className="rounded-md bg-green-50 px-3 py-2 text-sm text-green-600">{success}</p>
+          <p className="rounded-xl bg-green-50 px-3 py-2 text-sm text-green-600">{success}</p>
         )}
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center justify-end gap-2">
+          <button
+            type="button"
+            onClick={() => onCancel ? onCancel() : router.back()}
+            className="rounded-xl bg-brand-light px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light/80"
+          >
+            Cancelar
+          </button>
           <button
             type="submit"
             disabled={isPending}
-            className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-700 disabled:opacity-50"
+            className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 disabled:opacity-50"
           >
             {isPending
               ? 'Salvando...'
               : aprovacaoImediata
               ? 'Matricular (aprovado)'
               : 'Solicitar matrícula'}
-          </button>
-          <button
-            type="button"
-            onClick={() => router.back()}
-            className="text-sm text-zinc-500 hover:text-zinc-900"
-          >
-            Cancelar
           </button>
         </div>
       </form>

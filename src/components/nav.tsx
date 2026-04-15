@@ -11,63 +11,62 @@ interface NavProps {
 }
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', roles: ['DIRETOR', 'FINANCEIRA', 'COORDENADOR', 'PROFESSOR', 'ALUNO'] as Role[] },
-  { href: '/cadastros/alunos', label: 'Alunos', roles: ['DIRETOR', 'COORDENADOR'] as Role[] },
-  { href: '/cursos', label: 'Cursos', roles: ['DIRETOR', 'COORDENADOR'] as Role[] },
-  { href: '/turmas', label: 'Turmas', roles: ['DIRETOR', 'COORDENADOR', 'PROFESSOR'] as Role[] },
-  { href: '/matriculas', label: 'Matrículas', roles: ['DIRETOR', 'COORDENADOR', 'PROFESSOR', 'ALUNO'] as Role[] },
-  { href: '/minhas-materias', label: 'Minhas Matérias', roles: ['PROFESSOR'] as Role[] },
-  { href: '/financeiro', label: 'Financeiro', roles: ['DIRETOR', 'FINANCEIRA'] as Role[] },
+  { href: '/dashboard',       label: 'Dashboard',       roles: ['DIRETOR', 'FINANCEIRA', 'COORDENADOR', 'PROFESSOR', 'ALUNO'] as Role[] },
+  { href: '/cadastros/alunos',label: 'Alunos',           roles: ['DIRETOR', 'COORDENADOR'] as Role[] },
+  { href: '/cursos',          label: 'Cursos',           roles: ['DIRETOR', 'COORDENADOR'] as Role[] },
+  { href: '/turmas',          label: 'Turmas',           roles: ['DIRETOR', 'COORDENADOR', 'PROFESSOR'] as Role[] },
+  { href: '/matriculas',      label: 'Matrículas',       roles: ['DIRETOR', 'COORDENADOR', 'PROFESSOR', 'ALUNO'] as Role[] },
+  { href: '/minhas-materias', label: 'Minhas Matérias',  roles: ['PROFESSOR'] as Role[] },
+  { href: '/financeiro',      label: 'Financeiro',       roles: ['DIRETOR', 'FINANCEIRA'] as Role[] },
 ]
 
 const roleLabels: Record<Role, string> = {
-  DIRETOR: 'Diretor',
-  FINANCEIRA: 'Financeira',
+  DIRETOR:     'Diretor',
+  FINANCEIRA:  'Financeira',
   COORDENADOR: 'Coordenador',
-  PROFESSOR: 'Professor',
-  ALUNO: 'Aluno',
+  PROFESSOR:   'Professor',
+  ALUNO:       'Aluno',
 }
 
 export function Nav({ userName, userRole }: NavProps) {
   const pathname = usePathname()
-
   const visibleItems = navItems.filter((item) => item.roles.includes(userRole))
 
   return (
-    <nav className="flex h-14 items-center justify-between border-b border-zinc-200 bg-white px-6">
-      <div className="flex items-center gap-6">
-        <span className="font-semibold text-zinc-900">EscolaFull</span>
-        <div className="flex items-center gap-1">
-          {visibleItems.map((item) => (
-            <Link
-              key={item.href}
-              href={item.href}
-              className={`rounded-md px-3 py-1.5 text-sm transition-colors ${
-                pathname.startsWith(item.href)
-                  ? 'bg-zinc-100 font-medium text-zinc-900'
-                  : 'text-zinc-500 hover:bg-zinc-50 hover:text-zinc-900'
-              }`}
-            >
-              {item.label}
-            </Link>
-          ))}
-        </div>
+    <aside className="flex w-56 shrink-0 flex-col bg-brand">
+      {/* Logo */}
+      <div className="px-5 py-6">
+        <span className="text-base font-semibold text-white">Sistema Escolar</span>
       </div>
 
-      <div className="flex items-center gap-3">
-        <span className="text-sm text-zinc-500">
-          {userName}{' '}
-          <span className="rounded bg-zinc-100 px-1.5 py-0.5 text-xs font-medium text-zinc-600">
-            {roleLabels[userRole]}
-          </span>
-        </span>
+      {/* Nav items */}
+      <nav className="flex flex-1 flex-col gap-1 px-3">
+        {visibleItems.map((item) => (
+          <Link
+            key={item.href}
+            href={item.href}
+            className={`rounded-xl px-3 py-2 text-sm transition-colors ${
+              pathname.startsWith(item.href)
+                ? 'bg-white/20 font-medium text-white'
+                : 'text-white/70 hover:bg-white/10 hover:text-white'
+            }`}
+          >
+            {item.label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* User + logout */}
+      <div className="border-t border-white/10 px-5 py-4">
+        <p className="truncate text-sm font-medium text-white">{userName}</p>
+        <p className="mt-0.5 text-xs text-white/60">{roleLabels[userRole]}</p>
         <button
           onClick={() => signOut({ callbackUrl: '/login' })}
-          className="text-sm text-zinc-500 hover:text-zinc-900"
+          className="mt-3 text-xs text-white/50 hover:text-white"
         >
           Sair
         </button>
       </div>
-    </nav>
+    </aside>
   )
 }

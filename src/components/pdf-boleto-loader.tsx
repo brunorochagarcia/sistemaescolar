@@ -8,7 +8,7 @@ const PdfBoletoInner = dynamic(
   {
     ssr: false,
     loading: () => (
-      <span className="inline-flex items-center rounded-md bg-zinc-100 px-4 py-2 text-sm text-zinc-400">
+      <span className="inline-flex items-center rounded-xl bg-brand-light px-4 py-2 text-sm text-brand/60">
         Carregando PDF...
       </span>
     ),

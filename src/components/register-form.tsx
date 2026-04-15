@@ -25,9 +25,9 @@ export function RegisterForm() {
 
   if (success) {
     return (
-      <div className="rounded-md bg-green-50 px-4 py-6 text-center">
-        <p className="font-medium text-green-800">Cadastro enviado!</p>
-        <p className="mt-1 text-sm text-green-700">
+      <div className="rounded-xl bg-brand-light px-4 py-6 text-center">
+        <p className="font-medium text-brand">Cadastro enviado!</p>
+        <p className="mt-1 text-sm text-brand/70">
           Aguarde a aprovação da coordenação. Você será notificado em breve.
         </p>
       </div>
@@ -46,7 +46,7 @@ export function RegisterForm() {
           type="text"
           required
           autoComplete="name"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+          className="rounded-xl border border-brand/20 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/20"
           placeholder="Maria da Silva"
         />
       </div>
@@ -61,7 +61,7 @@ export function RegisterForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+          className="rounded-xl border border-brand/20 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/20"
           placeholder="maria@email.com"
         />
       </div>
@@ -76,7 +76,7 @@ export function RegisterForm() {
           name="emailResponsavel"
           type="email"
           autoComplete="off"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+          className="rounded-xl border border-brand/20 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/20"
           placeholder="responsavel@email.com"
         />
       </div>
@@ -90,25 +90,25 @@ export function RegisterForm() {
           id="dataNascimento"
           name="dataNascimento"
           type="date"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+          className="rounded-xl border border-brand/20 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/20"
         />
       </div>
 
       {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
       )}
 
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50"
+        className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand/90 disabled:opacity-50"
       >
         {isPending ? 'Enviando...' : 'Solicitar cadastro'}
       </button>
 
       <p className="text-center text-sm text-zinc-500">
         Já tem conta?{' '}
-        <a href="/login" className="font-medium text-zinc-900 hover:underline">
+        <a href="/login" className="font-medium text-brand hover:underline">
           Entrar
         </a>
       </p>

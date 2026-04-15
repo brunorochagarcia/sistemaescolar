@@ -46,7 +46,7 @@ export function AlunoActions({ alunoId, status }: AlunoActionsProps) {
         <button
           onClick={handleAprovar}
           disabled={isPending}
-          className="rounded-md bg-green-600 px-3 py-1 text-xs font-medium text-white hover:bg-green-700 disabled:opacity-50"
+          className="rounded-xl bg-brand px-3 py-1 text-xs font-medium text-white hover:bg-brand/90 disabled:opacity-50"
         >
           Aprovar
         </button>
@@ -54,7 +54,7 @@ export function AlunoActions({ alunoId, status }: AlunoActionsProps) {
       <button
         onClick={handleExcluir}
         disabled={isPending}
-        className="rounded-md border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+        className="rounded-xl border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
       >
         Desativar
       </button>

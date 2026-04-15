@@ -5,6 +5,7 @@ import { podeGerirFinanceiro } from '@/lib/auth/permissions'
 import { BoletoActions } from '@/components/boleto-actions'
 import Link from 'next/link'
 import type { StatusBoleto } from '@/generated/prisma/enums'
+import { MesFilter } from './mes-filter'
 
 export const metadata = { title: 'Financeiro — Sistema Escolar' }
 
@@ -99,16 +100,7 @@ export default async function FinanceiroPage({
             {s === '' ? 'Todos' : statusConfig[s].label}
           </Link>
         ))}
-        <form method="GET" className="flex items-center gap-1">
-          {status && <input type="hidden" name="status" value={status} />}
-          <input
-            type="month"
-            name="mes"
-            defaultValue={mes}
-            onChange={(e) => e.currentTarget.form?.submit()}
-            className="rounded-md border border-zinc-300 px-2 py-1 text-xs outline-none focus:border-zinc-500"
-          />
-        </form>
+        <MesFilter mes={mes} status={status} />
       </div>
 
       {boletos.length === 0 ? (

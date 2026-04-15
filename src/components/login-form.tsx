@@ -44,7 +44,7 @@ export function LoginForm() {
           type="email"
           required
           autoComplete="email"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+          className="rounded-xl border border-brand/20 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/20"
           placeholder="seu@email.com"
         />
       </div>
@@ -59,26 +59,26 @@ export function LoginForm() {
           type="password"
           required
           autoComplete="current-password"
-          className="rounded-md border border-zinc-300 px-3 py-2 text-sm outline-none focus:border-zinc-500 focus:ring-1 focus:ring-zinc-500"
+          className="rounded-xl border border-brand/20 px-3 py-2 text-sm outline-none focus:border-brand focus:ring-1 focus:ring-brand/20"
           placeholder="••••••••"
         />
       </div>
 
       {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
       )}
 
       <button
         type="submit"
         disabled={isPending}
-        className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-zinc-700 disabled:opacity-50"
+        className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-brand/90 disabled:opacity-50"
       >
         {isPending ? 'Entrando...' : 'Entrar'}
       </button>
 
       <p className="text-center text-sm text-zinc-500">
         Aluno novo?{' '}
-        <a href="/register" className="font-medium text-zinc-900 hover:underline">
+        <a href="/register" className="font-medium text-brand hover:underline">
           Cadastre-se
         </a>
       </p>

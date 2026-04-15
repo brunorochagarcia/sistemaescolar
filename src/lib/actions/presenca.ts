@@ -144,12 +144,12 @@ export async function notificarAluno(formData: FormData): Promise<ActionResult> 
     await resend.emails.send({
       from: env.RESEND_FROM_EMAIL,
       to: destinatarios,
-      subject: `[EscolaFull] Alerta de frequência — ${aluno.nome}`,
+      subject: `[Sistema Escolar] Alerta de frequência — ${aluno.nome}`,
       html: `
         <p>Olá,</p>
         <p>Este é um alerta automático sobre a frequência do aluno <strong>${aluno.nome}</strong>.</p>
         <p>A frequência está abaixo do mínimo exigido (75%). Entre em contato com a escola para mais informações.</p>
-        <p>Atenciosamente,<br/>Equipe EscolaFull</p>
+        <p>Atenciosamente,<br/>Equipe Sistema Escolar</p>
       `,
     })
   } catch (err) {
@@ -208,12 +208,12 @@ export async function notificarTodos(formData: FormData): Promise<ActionResult<{
       await resend.emails.send({
         from: env.RESEND_FROM_EMAIL,
         to: destinatarios,
-        subject: `[EscolaFull] Alerta de frequência — ${aluno.nome}`,
+        subject: `[Sistema Escolar] Alerta de frequência — ${aluno.nome}`,
         html: `
           <p>Olá,</p>
           <p>A frequência do aluno <strong>${aluno.nome}</strong> está em <strong>${percentual.toFixed(0)}%</strong>, abaixo do mínimo exigido (75%).</p>
           <p>Entre em contato com a escola.</p>
-          <p>Atenciosamente,<br/>Equipe EscolaFull</p>
+          <p>Atenciosamente,<br/>Equipe Sistema Escolar</p>
         `,
       })
       idsNotificados.push(aluno.id)

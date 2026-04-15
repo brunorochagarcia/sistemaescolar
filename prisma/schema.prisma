@@ -77,6 +77,7 @@ model Aluno {
   dataNascimento   DateTime?
   fotoUrl          String?
   fotoPublicId     String?
+  hashedPassword   String?
   status           StatusAluno @default(PENDENTE)
   alertaEnviado    Boolean     @default(false)
   createdAt        DateTime    @default(now())

@@ -29,7 +29,7 @@ export function NotificarAlunoButton({ alunoId, alertaJaEnviado }: NotificarAlun
 
   if (alertaJaEnviado) {
     return (
-      <span className="rounded-full bg-zinc-100 px-3 py-1.5 text-xs font-medium text-zinc-400">
+      <span className="rounded-full bg-brand-light px-3 py-1.5 text-xs font-medium text-brand/60">
         Alerta já enviado
       </span>
     )
@@ -39,7 +39,7 @@ export function NotificarAlunoButton({ alunoId, alertaJaEnviado }: NotificarAlun
     <button
       onClick={handleClick}
       disabled={isPending}
-      className="rounded-md bg-amber-500 px-4 py-2 text-sm font-medium text-white hover:bg-amber-600 disabled:opacity-50"
+      className="rounded-xl bg-accent px-4 py-2 text-sm font-medium text-white hover:bg-accent/90 disabled:opacity-50"
     >
       {isPending ? 'Enviando...' : 'Notificar aluno'}
     </button>

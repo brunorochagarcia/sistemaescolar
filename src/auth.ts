@@ -33,11 +33,12 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
         // Check Aluno table (students login with their email)
         const aluno = await prisma.aluno.findUnique({
           where: { email },
-          select: { id: true, nome: true, email: true, status: true },
+          select: { id: true, nome: true, email: true, status: true, hashedPassword: true },
         })
-        if (!aluno || aluno.status !== 'ATIVO') return null
-        // Note: Aluno password auth is simplified here — extend as needed
-        return null
+        if (!aluno || aluno.status !== 'ATIVO' || !aluno.hashedPassword) return null
+        const alunoOk = await bcrypt.compare(password, aluno.hashedPassword)
+        if (!alunoOk) return null
+        return { id: aluno.id, name: aluno.nome, email: aluno.email, role: 'ALUNO' as Role }
       },
     }),
   ],

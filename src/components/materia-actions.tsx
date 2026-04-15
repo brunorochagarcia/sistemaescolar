@@ -32,14 +32,14 @@ export function MateriaActions({ materiaId, turmaId }: MateriaActionsProps) {
     <div className="flex items-center gap-2">
       <Link
         href={`/turmas/${turmaId}/materias/${materiaId}/editar`}
-        className="rounded-md border border-zinc-200 px-3 py-1 text-xs font-medium text-zinc-600 hover:bg-zinc-50"
+        className="rounded-xl bg-brand-light px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light/80"
       >
         Editar
       </Link>
       <button
         onClick={handleExcluir}
         disabled={isPending}
-        className="rounded-md border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
+        className="rounded-xl border border-red-200 px-3 py-1 text-xs font-medium text-red-600 hover:bg-red-50 disabled:opacity-50"
       >
         Excluir
       </button>

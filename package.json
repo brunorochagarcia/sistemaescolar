@@ -12,6 +12,7 @@
     "db:migrate": "prisma migrate dev",
     "db:generate": "prisma generate",
     "db:seed": "tsx prisma/seed.ts",
+    "db:seed:boletos": "tsx prisma/seed-boletos.ts",
     "db:studio": "prisma studio"
   },
   "dependencies": {

@@ -36,7 +36,7 @@ function BoletoDocument({ boleto }: { boleto: BoletoData }) {
     <Document>
       <Page size="A4" style={styles.page}>
         <View style={styles.header}>
-          <Text style={styles.title}>EscolaFull</Text>
+          <Text style={styles.title}>Sistema Escolar</Text>
           <Text style={styles.subtitle}>Boleto de Mensalidade — {boleto.mesReferencia}</Text>
         </View>
 
@@ -89,7 +89,7 @@ function BoletoDocument({ boleto }: { boleto: BoletoData }) {
         </View>
 
         <Text style={styles.footer}>
-          Boleto simulado — gerado por EscolaFull · ID {boleto.id}
+          Boleto simulado — gerado por Sistema Escolar · ID {boleto.id}
         </Text>
       </Page>
     </Document>
