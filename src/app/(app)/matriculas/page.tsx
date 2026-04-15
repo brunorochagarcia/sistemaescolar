@@ -28,6 +28,7 @@ export default async function MatriculasPage({
 
   const { status, turmaId } = await searchParams
   const isProfessor = session.user.role === 'PROFESSOR'
+  const isAluno = session.user.role === 'ALUNO'
   const aprovacaoImediata = podeAprovarMatricula(session.user.role)
 
   const [matriculas, alunos, materias, turmas] = await Promise.all([
@@ -36,6 +37,7 @@ export default async function MatriculasPage({
         ...(status ? { status: status as StatusMatricula } : {}),
         ...(turmaId ? { materia: { turmaId } } : {}),
         ...(isProfessor ? { materia: { instrutorId: session.user.id } } : {}),
+        ...(isAluno ? { alunoId: session.user.id } : {}),
       },
       orderBy: [{ status: 'asc' }, { dataInicio: 'desc' }],
       select: {
