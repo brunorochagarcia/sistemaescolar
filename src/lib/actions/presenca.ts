@@ -4,9 +4,14 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { env } from '@/lib/env'
 import { podeGerirMateria } from '@/lib/auth/permissions'
+import { z } from 'zod'
 import { salvarChamadaSchema } from '@/lib/schemas/presenca'
 import { revalidatePath } from 'next/cache'
 import { Resend } from 'resend'
+
+const notificarAlunoSchema = z.object({
+  alunoId: z.string().min(1, 'ID do aluno obrigatório.'),
+})
 
 type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -108,10 +113,14 @@ export async function notificarAluno(formData: FormData): Promise<ActionResult> 
     return { ok: false, error: 'Sem permissão para enviar notificações.' }
   }
 
-  const alunoId = formData.get('alunoId') as string
-  if (!alunoId) return { ok: false, error: 'ID do aluno obrigatório.' }
+  // 3. Zod
+  const parsed = notificarAlunoSchema.safeParse({ alunoId: formData.get('alunoId') })
+  if (!parsed.success) {
+    return { ok: false, error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' }
+  }
+  const { alunoId } = parsed.data
 
-  // 3. Buscar aluno
+  // 4. Buscar aluno
   const aluno = await prisma.aluno.findUnique({
     where: { id: alunoId },
     select: { id: true, nome: true, email: true, emailResponsavel: true, alertaEnviado: true },
@@ -181,7 +190,7 @@ export async function notificarTodos(formData: FormData): Promise<ActionResult<{
   })
 
   const resend = new Resend(env.RESEND_API_KEY)
-  let enviados = 0
+  const idsNotificados: string[] = []
 
   for (const aluno of alunos) {
     if (aluno.presencas.length === 0) continue
@@ -207,17 +216,19 @@ export async function notificarTodos(formData: FormData): Promise<ActionResult<{
           <p>Atenciosamente,<br/>Equipe EscolaFull</p>
         `,
       })
-
-      await prisma.aluno.update({
-        where: { id: aluno.id },
-        data: { alertaEnviado: true },
-      })
-
-      enviados++
+      idsNotificados.push(aluno.id)
     } catch (err) {
       console.error(`[notificarTodos] falha para aluno ${aluno.id}:`, err)
     }
   }
 
-  return { ok: true, data: { enviados } }
+  // Marcar todos como notificados em um único roundtrip
+  if (idsNotificados.length > 0) {
+    await prisma.aluno.updateMany({
+      where: { id: { in: idsNotificados } },
+      data: { alertaEnviado: true },
+    })
+  }
+
+  return { ok: true, data: { enviados: idsNotificados.length } }
 }

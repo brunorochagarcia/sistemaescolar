@@ -42,10 +42,16 @@ export async function proxy(request: NextRequest) {
     }
   }
 
-  // Academic routes — DIRETOR and COORDENADOR only (PROFESSOR/ALUNO handled at page level)
-  if (pathname.startsWith('/cadastros') || pathname.startsWith('/cursos') ||
-      pathname.startsWith('/turmas')) {
+  // Academic admin routes — DIRETOR and COORDENADOR only
+  if (pathname.startsWith('/cadastros') || pathname.startsWith('/cursos')) {
     if (role !== 'DIRETOR' && role !== 'COORDENADOR') {
+      return NextResponse.redirect(new URL('/dashboard', request.url))
+    }
+  }
+
+  // Turmas — PROFESSOR also needs access for chamada and notas (IDOR enforced at page level)
+  if (pathname.startsWith('/turmas')) {
+    if (role !== 'DIRETOR' && role !== 'COORDENADOR' && role !== 'PROFESSOR') {
       return NextResponse.redirect(new URL('/dashboard', request.url))
     }
   }
