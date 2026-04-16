@@ -226,10 +226,8 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
             <thead className="border-b border-zinc-100 bg-zinc-50">
               <tr>
                 <th className="px-4 py-3 text-left font-medium text-zinc-500">Nome</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-500">E-mail</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-500">Nº Cadastro</th>
+                <th className="px-4 py-3 text-left font-medium text-zinc-500">Nº Matrícula</th>
                 <th className="px-4 py-3 text-left font-medium text-zinc-500">Status</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-500">Inscrito em</th>
                 <th className="px-4 py-3 text-right font-medium text-zinc-500">Ações</th>
               </tr>
             </thead>
@@ -241,14 +239,12 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
                     <td className="px-4 py-3 font-medium text-zinc-900" title={aluno.nome}>
                       {primeiroEUltimoNome(aluno.nome)}
                     </td>
-                    <td className="px-4 py-3 text-zinc-500">{aluno.email ?? '—'}</td>
                     <td className="px-4 py-3 font-mono text-zinc-500">{aluno.numeroCadastro ?? '—'}</td>
                     <td className="px-4 py-3">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
                         {badge.label}
                       </span>
                     </td>
-                    <td className="px-4 py-3 text-zinc-400">{aluno.createdAt}</td>
                     <td className="px-4 py-3">
                       <div className="flex items-center justify-end gap-2">
                         <Link
