@@ -464,16 +464,22 @@ async function main() {
       simAlunos += 20
 
       // ── Passo 2: matrículas em bulk ───────────────────────────────────────
-      const matriculaData = alunosDB.flatMap((aluno, pi) => {
-        const p      = perfilAluno(pi)
-        const falhou = p !== 'regular' && p !== 'inadimplente' && ano < 2026
-        return materiasDB.map(mat => ({
+      // Todos os alunos simulados têm matrícula APROVADA — a reprovação
+      // é refletida nas notas (2.0–4.5) e presenças (50% ausente), não no status.
+      const matriculaData = alunosDB.flatMap((aluno) =>
+        materiasDB.map(mat => ({
           alunoId:   aluno.id,
           materiaId: mat.id,
-          status:    (falhou ? 'REJEITADA' : 'APROVADA') as 'APROVADA' | 'REJEITADA',
+          status:    'APROVADA' as const,
         }))
-      })
+      )
       await prisma.matricula.createMany({ data: matriculaData, skipDuplicates: true })
+
+      // Corrigir matrículas REJEITADA existentes (dados gerados pela versão anterior do seed)
+      await prisma.matricula.updateMany({
+        where: { alunoId: { in: alunosDB.map(a => a.id) }, status: 'REJEITADA' },
+        data:  { status: 'APROVADA' },
+      })
 
       // ── Passo 3: buscar IDs das matrículas ───────────────────────────────
       const matriculasDB = await prisma.matricula.findMany({
