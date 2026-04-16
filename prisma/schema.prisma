@@ -74,6 +74,10 @@ model Aluno {
   numeroCadastro   String?     @unique // gerado em aprovarAluno(): "CAD-{ano}-{00001}"
   email            String?     @unique // e-mail próprio para login como ALUNO
   emailResponsavel String?             // e-mail do responsável para alertas
+  nomeResponsavel  String?
+  telefone         String?
+  rg               String?
+  endereco         String?
   dataNascimento   DateTime?
   fotoUrl          String?
   fotoPublicId     String?

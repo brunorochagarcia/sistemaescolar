@@ -11,6 +11,10 @@ export interface AlunoRow {
   nome: string
   email: string | null
   emailResponsavel: string | null
+  nomeResponsavel: string | null
+  telefone: string | null
+  rg: string | null
+  endereco: string | null
   dataNascimento: string | null  // YYYY-MM-DD ou null
   numeroCadastro: string | null
   cursos: string[]
@@ -106,11 +110,23 @@ function EditarModal({ aluno, onClose }: { aluno: AlunoRow; onClose: () => void 
         <Field label="E-mail">
           <input name="email" type="email" required defaultValue={aluno.email ?? ''} className={inputCls} />
         </Field>
-        <Field label="E-mail do responsável" optional>
-          <input name="emailResponsavel" type="email" defaultValue={aluno.emailResponsavel ?? ''} className={inputCls} />
-        </Field>
         <Field label="Data de nascimento" optional>
           <input name="dataNascimento" type="date" defaultValue={aluno.dataNascimento ?? ''} className={inputCls} />
+        </Field>
+        <Field label="Telefone" optional>
+          <input name="telefone" type="tel" defaultValue={aluno.telefone ?? ''} placeholder="(11) 99999-9999" className={inputCls} />
+        </Field>
+        <Field label="RG" optional>
+          <input name="rg" type="text" defaultValue={aluno.rg ?? ''} placeholder="00.000.000-0" className={inputCls} />
+        </Field>
+        <Field label="Endereço" optional>
+          <input name="endereco" type="text" defaultValue={aluno.endereco ?? ''} placeholder="Rua, número, bairro, cidade" className={inputCls} />
+        </Field>
+        <Field label="Nome do responsável" optional>
+          <input name="nomeResponsavel" type="text" defaultValue={aluno.nomeResponsavel ?? ''} className={inputCls} />
+        </Field>
+        <Field label="E-mail do responsável" optional>
+          <input name="emailResponsavel" type="email" defaultValue={aluno.emailResponsavel ?? ''} className={inputCls} />
         </Field>
 
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
@@ -158,11 +174,23 @@ function CriarModal({ onClose }: { onClose: () => void }) {
         <Field label="Senha de acesso">
           <input name="senha" type="password" required placeholder="mínimo 6 caracteres" className={inputCls} />
         </Field>
-        <Field label="E-mail do responsável" optional>
-          <input name="emailResponsavel" type="email" placeholder="responsavel@email.com" className={inputCls} />
-        </Field>
         <Field label="Data de nascimento" optional>
           <input name="dataNascimento" type="date" className={inputCls} />
+        </Field>
+        <Field label="Telefone" optional>
+          <input name="telefone" type="tel" placeholder="(11) 99999-9999" className={inputCls} />
+        </Field>
+        <Field label="RG" optional>
+          <input name="rg" type="text" placeholder="00.000.000-0" className={inputCls} />
+        </Field>
+        <Field label="Endereço" optional>
+          <input name="endereco" type="text" placeholder="Rua, número, bairro, cidade" className={inputCls} />
+        </Field>
+        <Field label="Nome do responsável" optional>
+          <input name="nomeResponsavel" type="text" placeholder="Nome completo do responsável" className={inputCls} />
+        </Field>
+        <Field label="E-mail do responsável" optional>
+          <input name="emailResponsavel" type="email" placeholder="responsavel@email.com" className={inputCls} />
         </Field>
 
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
@@ -180,6 +208,29 @@ function CriarModal({ onClose }: { onClose: () => void }) {
   )
 }
 
+// ── Ordenação e paginação ─────────────────────────────────────────────────────
+
+type SortCol = 'nome' | 'cursos' | 'status'
+type SortDir = 'asc' | 'desc'
+
+const STATUS_ORDER = { ATIVO: 0, PENDENTE: 1, INATIVO: 2 }
+
+function sortAlunos(rows: AlunoRow[], col: SortCol, dir: SortDir): AlunoRow[] {
+  return [...rows].sort((a, b) => {
+    let cmp = 0
+    if (col === 'nome') {
+      cmp = primeiroEUltimoNome(a.nome).localeCompare(primeiroEUltimoNome(b.nome), 'pt-BR')
+    } else if (col === 'cursos') {
+      cmp = (a.cursos[0] ?? '').localeCompare(b.cursos[0] ?? '', 'pt-BR')
+    } else if (col === 'status') {
+      cmp = STATUS_ORDER[a.status] - STATUS_ORDER[b.status]
+    }
+    return dir === 'asc' ? cmp : -cmp
+  })
+}
+
+const PAGE_SIZE = 20
+
 // ── Tabela principal ──────────────────────────────────────────────────────────
 
 interface AlunosTableProps {
@@ -189,9 +240,31 @@ interface AlunosTableProps {
 export function AlunosTable({ alunos }: AlunosTableProps) {
   const [editando, setEditando] = useState<AlunoRow | null>(null)
   const [criando, setCriando] = useState(false)
+  const [sortCol, setSortCol] = useState<SortCol>('nome')
+  const [sortDir, setSortDir] = useState<SortDir>('asc')
+  const [page, setPage] = useState(1)
 
   const pendentes = alunos.filter((a) => a.status === 'PENDENTE')
   const ativos    = alunos.filter((a) => a.status === 'ATIVO')
+
+  const sorted   = sortAlunos(alunos, sortCol, sortDir)
+  const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
+  const paginated  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
+
+  function toggleSort(col: SortCol) {
+    if (col === sortCol) {
+      setSortDir((d) => (d === 'asc' ? 'desc' : 'asc'))
+    } else {
+      setSortCol(col)
+      setSortDir('asc')
+    }
+    setPage(1)
+  }
+
+  function SortIcon({ col }: { col: SortCol }) {
+    if (sortCol !== col) return <span className="ml-1 text-zinc-300">↕</span>
+    return <span className="ml-1 text-zinc-600">{sortDir === 'asc' ? '↑' : '↓'}</span>
+  }
 
   return (
     <>
@@ -222,55 +295,99 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
           <p className="text-zinc-500">Nenhum aluno cadastrado ainda.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
-          <table className="w-full text-sm">
-            <thead className="border-b border-zinc-100 bg-zinc-50">
-              <tr>
-                <th className="px-4 py-3 text-left font-medium text-zinc-500">Nome</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-500">Curso</th>
-                <th className="px-4 py-3 text-left font-medium text-zinc-500">Status</th>
-                <th className="px-4 py-3 text-right font-medium text-zinc-500">Ações</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-100">
-              {alunos.map((aluno) => {
-                const badge = statusLabels[aluno.status]
-                return (
-                  <tr key={aluno.id} className="hover:bg-zinc-50">
-                    <td className="px-4 py-3 font-medium text-zinc-900" title={aluno.nome}>
-                      {primeiroEUltimoNome(aluno.nome)}
-                    </td>
-                    <td className="px-4 py-3 text-zinc-500">
-                      {aluno.cursos.length > 0 ? aluno.cursos.join(', ') : '—'}
-                    </td>
-                    <td className="px-4 py-3">
-                      <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
-                        {badge.label}
-                      </span>
-                    </td>
-                    <td className="px-4 py-3">
-                      <div className="flex items-center justify-end gap-2">
-                        <Link
-                          href={`/alunos/${aluno.id}`}
-                          className="rounded-xl bg-brand-light px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light/80"
-                        >
-                          Perfil
+        <>
+          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+            <table className="w-full text-sm">
+              <thead className="border-b border-zinc-100 bg-zinc-50">
+                <tr>
+                  <th className="px-4 py-3 text-left">
+                    <button onClick={() => toggleSort('nome')} className="flex items-center font-medium text-zinc-500 hover:text-zinc-900">
+                      Nome <SortIcon col="nome" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <button onClick={() => toggleSort('cursos')} className="flex items-center font-medium text-zinc-500 hover:text-zinc-900">
+                      Curso <SortIcon col="cursos" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-left">
+                    <button onClick={() => toggleSort('status')} className="flex items-center font-medium text-zinc-500 hover:text-zinc-900">
+                      Status <SortIcon col="status" />
+                    </button>
+                  </th>
+                  <th className="px-4 py-3 text-right font-medium text-zinc-500">Ações</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-zinc-100">
+                {paginated.map((aluno) => {
+                  const badge = statusLabels[aluno.status]
+                  return (
+                    <tr key={aluno.id} className="hover:bg-zinc-50">
+                      <td className="px-4 py-3 font-medium">
+                        <Link href={`/alunos/${aluno.id}`} title={aluno.nome} className="text-zinc-900 hover:underline">
+                          {primeiroEUltimoNome(aluno.nome)}
                         </Link>
-                        <button
-                          onClick={() => setEditando(aluno)}
-                          className="rounded-xl bg-brand-light px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light/80"
-                        >
-                          Editar
-                        </button>
-                        <AlunoActions alunoId={aluno.id} status={aluno.status} />
-                      </div>
-                    </td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+                      </td>
+                      <td className="px-4 py-3 text-zinc-500">
+                        {aluno.cursos.length > 0 ? aluno.cursos.join(', ') : '—'}
+                      </td>
+                      <td className="px-4 py-3">
+                        <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${badge.className}`}>
+                          {badge.label}
+                        </span>
+                      </td>
+                      <td className="px-4 py-3">
+                        <div className="flex items-center justify-end gap-2">
+                          <button
+                            onClick={() => setEditando(aluno)}
+                            className="rounded-xl bg-brand-light px-3 py-1 text-xs font-medium text-brand hover:bg-brand-light/80"
+                          >
+                            Editar
+                          </button>
+                          <AlunoActions alunoId={aluno.id} status={aluno.status} />
+                        </div>
+                      </td>
+                    </tr>
+                  )
+                })}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Paginação */}
+          {totalPages > 1 && (
+            <div className="mt-4 flex items-center justify-between text-sm text-zinc-500">
+              <span>
+                {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, sorted.length)} de {sorted.length}
+              </span>
+              <div className="flex items-center gap-1">
+                <button
+                  onClick={() => setPage((p) => p - 1)}
+                  disabled={page === 1}
+                  className="rounded-lg px-3 py-1.5 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  ←
+                </button>
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((p) => (
+                  <button
+                    key={p}
+                    onClick={() => setPage(p)}
+                    className={`rounded-lg px-3 py-1.5 ${p === page ? 'bg-zinc-900 text-white' : 'hover:bg-zinc-100'}`}
+                  >
+                    {p}
+                  </button>
+                ))}
+                <button
+                  onClick={() => setPage((p) => p + 1)}
+                  disabled={page === totalPages}
+                  className="rounded-lg px-3 py-1.5 hover:bg-zinc-100 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  →
+                </button>
+              </div>
+            </div>
+          )}
+        </>
       )}
 
       {/* Modais */}

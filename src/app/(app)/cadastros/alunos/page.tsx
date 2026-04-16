@@ -22,6 +22,10 @@ export default async function AlunosPage() {
       nome: true,
       email: true,
       emailResponsavel: true,
+      nomeResponsavel: true,
+      telefone: true,
+      rg: true,
+      endereco: true,
       dataNascimento: true,
       numeroCadastro: true,
       status: true,
@@ -42,6 +46,10 @@ export default async function AlunosPage() {
       nome: a.nome,
       email: a.email,
       emailResponsavel: a.emailResponsavel,
+      nomeResponsavel: a.nomeResponsavel,
+      telefone: a.telefone,
+      rg: a.rg,
+      endereco: a.endereco,
       dataNascimento: a.dataNascimento
         ? a.dataNascimento.toISOString().slice(0, 10)
         : null,

@@ -180,11 +180,15 @@ export async function editarAluno(formData: FormData): Promise<ActionResult> {
     nome:             formData.get('nome'),
     email:            formData.get('email'),
     emailResponsavel: formData.get('emailResponsavel') ?? '',
+    nomeResponsavel:  formData.get('nomeResponsavel') ?? '',
+    telefone:         formData.get('telefone') ?? '',
+    rg:               formData.get('rg') ?? '',
+    endereco:         formData.get('endereco') ?? '',
     dataNascimento:   formData.get('dataNascimento') ?? '',
   })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' }
 
-  const { alunoId, nome, email, emailResponsavel, dataNascimento } = parsed.data
+  const { alunoId, nome, email, emailResponsavel, nomeResponsavel, telefone, rg, endereco, dataNascimento } = parsed.data
 
   const existe = await prisma.aluno.findUnique({ where: { id: alunoId }, select: { id: true } })
   if (!existe) return { ok: false, error: 'Aluno não encontrado.' }
@@ -192,7 +196,16 @@ export async function editarAluno(formData: FormData): Promise<ActionResult> {
   try {
     await prisma.aluno.update({
       where: { id: alunoId },
-      data: { nome, email, emailResponsavel: emailResponsavel ?? null, dataNascimento: dataNascimento ? new Date(dataNascimento) : null },
+      data: {
+        nome,
+        email,
+        emailResponsavel: emailResponsavel ?? null,
+        nomeResponsavel:  nomeResponsavel  ?? null,
+        telefone:         telefone         ?? null,
+        rg:               rg               ?? null,
+        endereco:         endereco         ?? null,
+        dataNascimento:   dataNascimento ? new Date(dataNascimento) : null,
+      },
     })
     revalidatePath('/cadastros/alunos')
     return { ok: true }
@@ -217,11 +230,15 @@ export async function criarAlunoAdmin(
     email:            formData.get('email'),
     senha:            formData.get('senha'),
     emailResponsavel: formData.get('emailResponsavel') ?? '',
+    nomeResponsavel:  formData.get('nomeResponsavel') ?? '',
+    telefone:         formData.get('telefone') ?? '',
+    rg:               formData.get('rg') ?? '',
+    endereco:         formData.get('endereco') ?? '',
     dataNascimento:   formData.get('dataNascimento') ?? '',
   })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' }
 
-  const { nome, email, senha, emailResponsavel, dataNascimento } = parsed.data
+  const { nome, email, senha, emailResponsavel, nomeResponsavel, telefone, rg, endereco, dataNascimento } = parsed.data
   const hashedPassword = await bcrypt.hash(senha, 10)
 
   try {
@@ -230,7 +247,15 @@ export async function criarAlunoAdmin(
       const count = await tx.aluno.count({ where: { numeroCadastro: { startsWith: `CAD-${year}-` } } })
       const numeroCadastro = `CAD-${year}-${String(count + 1).padStart(5, '0')}`
       const aluno = await tx.aluno.create({
-        data: { nome, email, hashedPassword, emailResponsavel: emailResponsavel ?? null, dataNascimento: dataNascimento ? new Date(dataNascimento) : null, status: 'ATIVO', numeroCadastro },
+        data: {
+          nome, email, hashedPassword, status: 'ATIVO', numeroCadastro,
+          emailResponsavel: emailResponsavel ?? null,
+          nomeResponsavel:  nomeResponsavel  ?? null,
+          telefone:         telefone         ?? null,
+          rg:               rg               ?? null,
+          endereco:         endereco         ?? null,
+          dataNascimento:   dataNascimento ? new Date(dataNascimento) : null,
+        },
         select: { id: true, numeroCadastro: true },
       })
       return aluno
