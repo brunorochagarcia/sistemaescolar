@@ -12,11 +12,16 @@ const envSchema = z.object({
     .default('development'),
 })
 
-const parsed = envSchema.safeParse(process.env)
+// Skip validation during Next.js build phase — vars are only needed at runtime
+const isBuildPhase = process.env.NEXT_PHASE === 'phase-production-build'
+
+const parsed = isBuildPhase
+  ? { success: true as const, data: process.env as z.infer<typeof envSchema> }
+  : envSchema.safeParse(process.env)
 
 if (!parsed.success) {
   console.error('❌ Invalid environment variables:')
-  console.error(parsed.error.flatten().fieldErrors)
+  console.error((parsed as { success: false; error: z.ZodError }).error.flatten().fieldErrors)
   throw new Error('Invalid environment variables — check your .env file')
 }
 
