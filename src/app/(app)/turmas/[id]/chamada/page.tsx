@@ -102,6 +102,23 @@ export default async function ChamadaPage({
   })
   const datasHistorico = historico.map((h) => h.data.toISOString().split('T')[0])
 
+  // Presenças das últimas 5 datas para o resumo recente
+  const datasResumo = datasHistorico.slice(0, 5)
+  const presencasResumo = datasResumo.length > 0 && alunos.length > 0
+    ? await prisma.presenca.findMany({
+        where: {
+          alunoId: { in: alunos.map((a) => a.id) },
+          data: { in: datasResumo.map((d) => new Date(`${d}T00:00:00.000Z`)) },
+          ...(materiaAtual ? { materiaId: materiaAtual.id } : { turmaId }),
+        },
+        select: { alunoId: true, data: true, status: true },
+      })
+    : []
+  // Map: `${alunoId}-${YYYY-MM-DD}` → StatusPresenca
+  const resumoMap = Object.fromEntries(
+    presencasResumo.map((p) => [`${p.alunoId}-${p.data.toISOString().split('T')[0]}`, p.status])
+  ) as Record<string, StatusPresenca>
+
   return (
     <div className="mx-auto max-w-5xl">
       <div className="mb-6">
@@ -226,8 +243,7 @@ export default async function ChamadaPage({
                     <td className="px-4 py-2 font-medium text-zinc-900">{aluno.nome}</td>
                     {datasHistorico.slice(0, 5).map((d) => {
                       const key = `${aluno.id}-${d}`
-                      // Lookup from existentes (only for selected date) — simplified display
-                      const status = d === dataSelecionada ? existentesMap[aluno.id] : undefined
+                      const status = resumoMap[`${aluno.id}-${d}`]
                       const cfg = status ? statusLabels[status] : null
                       return (
                         <td key={key} className="px-2 py-2 text-center">
