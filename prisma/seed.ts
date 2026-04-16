@@ -8,10 +8,26 @@ const adapter = new PrismaPg({ connectionString })
 const prisma = new PrismaClient({ adapter })
 
 const NOMES = [
-  'Ana Souza', 'Bruno Costa', 'Carlos Mendes', 'Daniela Rocha', 'Eduardo Lima',
-  'Fernanda Alves', 'Gabriel Martins', 'Helena Ferreira', 'Igor Santos', 'Juliana Oliveira',
-  'Kevin Pereira', 'Larissa Nunes', 'Mateus Carvalho', 'Natália Ribeiro', 'Otávio Silva',
-  'Paula Gomes', 'Rafael Azevedo', 'Sabrina Teixeira', 'Thiago Moreira', 'Valentina Castro',
+  'Ana Lima',
+  'Carlos Eduardo Mendes',
+  'Maria das Graças Aparecida Ferreira da Silva',
+  'João Pedro Rocha',
+  'Beatriz Souza Carvalho Nunes',
+  'Rafael de Oliveira',
+  'Fernanda Cristina Alves Monteiro',
+  'Lucas',
+  'Natália Roberta dos Santos Pereira Gomes',
+  'Diego Martins',
+  'Isabela Cristiane de Almeida Nascimento Costa',
+  'Thiago Lima',
+  'Amanda Carolina Ferreira',
+  'Gustavo Henrique Rodrigues de Souza',
+  'Camila',
+  'Pedro Augusto Teixeira Barbosa Lopes',
+  'Juliana Neves',
+  'Rodrigo de Carvalho',
+  'Letícia Aparecida Moreira dos Santos Silva',
+  'Felipe Andrade',
 ]
 
 // Dias úteis (seg–sex) entre duas datas (UTC)

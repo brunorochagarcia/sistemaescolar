@@ -17,6 +17,12 @@ export interface AlunoRow {
   createdAt: string
 }
 
+function primeiroEUltimoNome(nome: string): string {
+  const partes = nome.trim().split(/\s+/)
+  if (partes.length <= 2) return nome
+  return `${partes[0]} ${partes[partes.length - 1]}`
+}
+
 const statusLabels = {
   ATIVO:    { label: 'Ativo',    className: 'bg-green-100 text-green-700' },
   PENDENTE: { label: 'Pendente', className: 'bg-amber-100 text-amber-700' },
@@ -232,7 +238,9 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
                 const badge = statusLabels[aluno.status]
                 return (
                   <tr key={aluno.id} className="hover:bg-zinc-50">
-                    <td className="px-4 py-3 font-medium text-zinc-900">{aluno.nome}</td>
+                    <td className="px-4 py-3 font-medium text-zinc-900" title={aluno.nome}>
+                      {primeiroEUltimoNome(aluno.nome)}
+                    </td>
                     <td className="px-4 py-3 text-zinc-500">{aluno.email ?? '—'}</td>
                     <td className="px-4 py-3 font-mono text-zinc-500">{aluno.numeroCadastro ?? '—'}</td>
                     <td className="px-4 py-3">
