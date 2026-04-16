@@ -89,6 +89,8 @@ model Aluno {
   matriculas       Matricula[]
   presencas        Presenca[]
   boletos          Boleto[]
+
+  @@index([status])
 }
 
 // Curso = programa acadêmico (ex: "Engenharia de Software")
@@ -118,6 +120,8 @@ model Turma {
   materias  Materia[]
   presencas Presenca[] // chamada geral da turma
   // Para listar matrículas de uma turma: turma.materias[*].matriculas
+
+  @@index([cursoId])
 }
 
 // Materia = disciplina dentro de uma Turma
@@ -134,6 +138,9 @@ model Materia {
   updatedAt   DateTime    @updatedAt
   matriculas  Matricula[]
   presencas   Presenca[]
+
+  @@index([turmaId])
+  @@index([instrutorId])
 }
 
 // Matricula = inscrição do aluno em uma Matéria específica
@@ -149,6 +156,8 @@ model Matricula {
   notas      Nota[]
 
   @@unique([alunoId, materiaId])
+  @@index([materiaId, status]) // lookup por matéria + filtro de status (chamada, ranking)
+  @@index([status])
 }
 
 // Nota = avaliação lançada pelo Professor
@@ -161,6 +170,8 @@ model Nota {
   descricao   String
   data        DateTime  @default(now())
   matricula   Matricula @relation(fields: [matriculaId], references: [id], onDelete: Cascade)
+
+  @@index([matriculaId])
 }
 
 // Presenca = registro diário de chamada
@@ -179,6 +190,14 @@ model Presenca {
   aluno     Aluno          @relation(fields: [alunoId], references: [id], onDelete: Cascade)
   turma     Turma?         @relation(fields: [turmaId], references: [id])
   materia   Materia?       @relation(fields: [materiaId], references: [id])
+
+  // Índices compostos para as queries mais comuns:
+  // - frequência de um aluno ordenada por data
+  // - chamada de uma turma em uma data específica
+  // - chamada de uma matéria em uma data específica
+  @@index([alunoId, data])
+  @@index([turmaId, data])
+  @@index([materiaId, data])
 }
 
 // Boleto = cobrança mensal proporcional
@@ -201,4 +220,6 @@ model Boleto {
   curso          Curso        @relation(fields: [cursoId], references: [id])
 
   @@unique([alunoId, cursoId, mesReferencia])
+  @@index([alunoId, status]) // inadimplentes: WHERE alunoId AND status = 'VENCIDO'
+  @@index([status, mesReferencia]) // financeiro: filtro por status + mês
 }

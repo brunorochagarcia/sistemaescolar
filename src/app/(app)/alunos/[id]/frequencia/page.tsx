@@ -11,13 +11,15 @@ export const metadata = { title: 'Frequência — Sistema Escolar' }
 const statusConfig: Record<StatusPresenca, { label: string; className: string }> = {
   PRESENTE: { label: 'Presente', className: 'bg-green-100 text-green-700' },
   ATRASADO: { label: 'Atrasado', className: 'bg-amber-100 text-amber-700' },
-  AUSENTE: { label: 'Falta', className: 'bg-red-100 text-red-600' },
+  AUSENTE:  { label: 'Falta',    className: 'bg-red-100 text-red-600' },
 }
 
 export default async function FrequenciaAlunoPage({
   params,
+  searchParams,
 }: {
   params: Promise<{ id: string }>
+  searchParams: Promise<{ ano?: string }>
 }) {
   const session = await auth()
   if (!session) redirect('/login')
@@ -25,57 +27,99 @@ export default async function FrequenciaAlunoPage({
     redirect('/dashboard')
   }
 
-  const { id } = await params
+  const [{ id }, { ano: anoParam }] = await Promise.all([params, searchParams])
 
+  const anoAtual = new Date().getFullYear()
+  const ano = anoParam ? parseInt(anoParam) : anoAtual
+  const inicioAno = new Date(Date.UTC(ano, 0, 1))
+  const fimAno = new Date(Date.UTC(ano + 1, 0, 1))
+
+  // ─── Buscar aluno + todas as queries em paralelo ───────────────────────────
   const aluno = await prisma.aluno.findUnique({
     where: { id },
-    select: {
-      id: true,
-      nome: true,
-      numeroCadastro: true,
-      alertaEnviado: true,
-      presencas: {
-        orderBy: { data: 'desc' },
-        select: {
-          id: true,
-          data: true,
-          status: true,
-          turma: { select: { id: true, nome: true } },
-          materia: { select: { id: true, nome: true } },
-        },
-      },
-    },
+    select: { id: true, nome: true, numeroCadastro: true, alertaEnviado: true },
   })
   if (!aluno) notFound()
 
-  // Calcular frequência geral: PRESENTE + ATRASADO = presente
-  const total = aluno.presencas.length
-  const presentes = aluno.presencas.filter(
-    (p) => p.status === 'PRESENTE' || p.status === 'ATRASADO'
-  ).length
+  // Contagens gerais (leves — usam índice em alunoId)
+  const [total, presentes, primeiraPresenca] = await Promise.all([
+    prisma.presenca.count({ where: { alunoId: id } }),
+    prisma.presenca.count({ where: { alunoId: id, status: { in: ['PRESENTE', 'ATRASADO'] } } }),
+    prisma.presenca.findFirst({
+      where: { alunoId: id },
+      orderBy: { data: 'asc' },
+      select: { data: true },
+    }),
+  ])
+
   const percentualGeral = total > 0 ? (presentes / total) * 100 : 0
 
-  // Frequência por turma/matéria
-  const porEscopo = new Map<
-    string,
-    { label: string; total: number; presentes: number }
-  >()
+  // Anos disponíveis para o seletor
+  const anoInicio = primeiraPresenca?.data.getFullYear() ?? anoAtual
+  const anosDisponiveis = Array.from(
+    { length: anoAtual - anoInicio + 1 },
+    (_, i) => anoAtual - i,
+  )
 
-  for (const p of aluno.presencas) {
-    const key = p.materia
-      ? `materia-${p.materia.id}`
-      : p.turma
-        ? `turma-${p.turma.id}`
-        : 'geral'
-    const label = p.materia?.nome ?? p.turma?.nome ?? 'Geral'
+  // Resumo por escopo via groupBy — sem carregar todos os registros
+  const [totalPorEscopo, presentesPorEscopo] = await Promise.all([
+    prisma.presenca.groupBy({
+      by: ['turmaId', 'materiaId'],
+      where: { alunoId: id },
+      _count: { _all: true },
+    }),
+    prisma.presenca.groupBy({
+      by: ['turmaId', 'materiaId'],
+      where: { alunoId: id, status: { in: ['PRESENTE', 'ATRASADO'] } },
+      _count: { _all: true },
+    }),
+  ])
 
-    if (!porEscopo.has(key)) {
-      porEscopo.set(key, { label, total: 0, presentes: 0 })
+  // Nomes dos escopos (batch — apenas IDs únicos)
+  const turmaIds = [...new Set(totalPorEscopo.map((e) => e.turmaId).filter(Boolean))] as string[]
+  const materiaIds = [...new Set(totalPorEscopo.map((e) => e.materiaId).filter(Boolean))] as string[]
+
+  const [turmas, materias] = await Promise.all([
+    turmaIds.length
+      ? prisma.turma.findMany({ where: { id: { in: turmaIds } }, select: { id: true, nome: true } })
+      : [],
+    materiaIds.length
+      ? prisma.materia.findMany({ where: { id: { in: materiaIds } }, select: { id: true, nome: true } })
+      : [],
+  ])
+
+  const turmaMap = Object.fromEntries(turmas.map((t) => [t.id, t.nome]))
+  const materiaMap = Object.fromEntries(materias.map((m) => [m.id, m.nome]))
+  const presentesMap = Object.fromEntries(
+    presentesPorEscopo.map((e) => [`${e.turmaId ?? ''}-${e.materiaId ?? ''}`, e._count._all]),
+  )
+
+  const escopos = totalPorEscopo.map((e) => {
+    const key = `${e.turmaId ?? ''}-${e.materiaId ?? ''}`
+    const label = e.materiaId
+      ? (materiaMap[e.materiaId] ?? '—')
+      : e.turmaId
+        ? (turmaMap[e.turmaId] ?? '—')
+        : 'Geral'
+    return {
+      label,
+      total: e._count._all,
+      presentes: presentesMap[key] ?? 0,
     }
-    const entry = porEscopo.get(key)!
-    entry.total++
-    if (p.status === 'PRESENTE' || p.status === 'ATRASADO') entry.presentes++
-  }
+  })
+
+  // Histórico do ano selecionado — paginado por ano, usa índice (alunoId, data)
+  const historico = await prisma.presenca.findMany({
+    where: { alunoId: id, data: { gte: inicioAno, lt: fimAno } },
+    orderBy: { data: 'desc' },
+    select: {
+      id: true,
+      data: true,
+      status: true,
+      turmaId: true,
+      materiaId: true,
+    },
+  })
 
   const canNotify =
     (session.user.role === 'DIRETOR' || session.user.role === 'COORDENADOR') &&
@@ -121,7 +165,7 @@ export default async function FrequenciaAlunoPage({
       </div>
 
       {/* Frequência por matéria/turma */}
-      {porEscopo.size > 0 && (
+      {escopos.length > 0 && (
         <div className="mb-6">
           <h3 className="mb-3 text-sm font-semibold text-zinc-700">Por matéria / turma</h3>
           <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
@@ -135,7 +179,7 @@ export default async function FrequenciaAlunoPage({
                 </tr>
               </thead>
               <tbody className="divide-y divide-zinc-100">
-                {Array.from(porEscopo.values()).map((entry, i) => {
+                {escopos.map((entry, i) => {
                   const pct = (entry.presentes / entry.total) * 100
                   return (
                     <tr key={i} className="hover:bg-zinc-50">
@@ -154,11 +198,33 @@ export default async function FrequenciaAlunoPage({
         </div>
       )}
 
-      {/* Histórico detalhado */}
-      <h3 className="mb-3 text-sm font-semibold text-zinc-700">Histórico</h3>
-      {aluno.presencas.length === 0 ? (
+      {/* Histórico paginado por ano */}
+      <div className="mb-3 flex items-center justify-between">
+        <h3 className="text-sm font-semibold text-zinc-700">
+          Histórico — {historico.length} registro{historico.length !== 1 ? 's' : ''} em {ano}
+        </h3>
+        {anosDisponiveis.length > 1 && (
+          <div className="flex items-center gap-1">
+            {anosDisponiveis.map((a) => (
+              <Link
+                key={a}
+                href={`/alunos/${id}/frequencia?ano=${a}`}
+                className={`rounded-lg px-3 py-1 text-xs font-medium transition-colors ${
+                  a === ano
+                    ? 'bg-zinc-900 text-white'
+                    : 'text-zinc-500 hover:bg-zinc-100'
+                }`}
+              >
+                {a}
+              </Link>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {historico.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 py-12 text-center">
-          <p className="text-zinc-500">Nenhum registro de presença.</p>
+          <p className="text-zinc-500">Nenhum registro em {ano}.</p>
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
@@ -171,16 +237,19 @@ export default async function FrequenciaAlunoPage({
               </tr>
             </thead>
             <tbody className="divide-y divide-zinc-100">
-              {aluno.presencas.map((p) => {
+              {historico.map((p) => {
                 const cfg = statusConfig[p.status]
+                const label = p.materiaId
+                  ? (materiaMap[p.materiaId] ?? '—')
+                  : p.turmaId
+                    ? (turmaMap[p.turmaId] ?? '—')
+                    : '—'
                 return (
                   <tr key={p.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-2 text-zinc-700">
-                      {p.data.toLocaleDateString('pt-BR')}
+                      {p.data.toLocaleDateString('pt-BR', { timeZone: 'UTC' })}
                     </td>
-                    <td className="px-4 py-2 text-zinc-500">
-                      {p.materia?.nome ?? p.turma?.nome ?? '—'}
-                    </td>
+                    <td className="px-4 py-2 text-zinc-500">{label}</td>
                     <td className="px-4 py-2 text-right">
                       <span className={`inline-flex rounded-full px-2 py-0.5 text-xs font-medium ${cfg.className}`}>
                         {cfg.label}
