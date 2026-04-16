@@ -3,7 +3,7 @@
 interface DataFilterProps {
   dataSelecionada: string
   hoje: string
-  materiaId: string
+  materiaId: string | undefined
 }
 
 export function DataFilter({ dataSelecionada, hoje, materiaId }: DataFilterProps) {

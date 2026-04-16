@@ -1,8 +1,8 @@
 'use client'
 
 interface MesFilterProps {
-  mes: string
-  status: string
+  mes: string | undefined
+  status: string | undefined
 }
 
 export function MesFilter({ mes, status }: MesFilterProps) {
