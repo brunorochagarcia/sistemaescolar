@@ -30,6 +30,51 @@ const NOMES = [
   'Felipe Andrade',
 ]
 
+const TELEFONES = [
+  '(11) 98234-5671', '(21) 97654-3210', '(31) 99123-4567', '(41) 98765-4321', '(51) 97891-2345',
+  '(11) 93456-7890', '(21) 96789-0123', '(31) 95678-9012', '(41) 94567-8901', '(51) 93456-7890',
+  '(11) 92345-6789', '(21) 91234-5678', '(31) 90123-4567', '(41) 99876-5432', '(51) 98765-4321',
+  '(11) 97654-3219', '(21) 96543-2108', '(31) 95432-1097', '(41) 94321-0986', '(51) 93210-9875',
+]
+
+const RGS = [
+  '12.345.678-9', '23.456.789-0', '34.567.890-1', '45.678.901-2', '56.789.012-3',
+  '67.890.123-4', '78.901.234-5', '89.012.345-6', '90.123.456-7', '01.234.567-8',
+  '11.223.344-5', '22.334.455-6', '33.445.566-7', '44.556.677-8', '55.667.788-9',
+  '66.778.899-0', '77.889.900-1', '88.990.011-2', '99.001.122-3', '10.111.213-4',
+]
+
+const ENDERECOS = [
+  'Rua das Flores, 123, Jardim Paulista, São Paulo - SP',
+  'Av. Brasil, 456, Centro, Rio de Janeiro - RJ',
+  'Rua Minas Gerais, 789, Savassi, Belo Horizonte - MG',
+  'Rua XV de Novembro, 321, Centro, Curitiba - PR',
+  'Av. Farroupilha, 654, Bom Fim, Porto Alegre - RS',
+  'Rua do Comércio, 987, Centro, Salvador - BA',
+  'Av. Paulista, 1500, Bela Vista, São Paulo - SP',
+  'Rua Primeiro de Março, 22, Centro Histórico, Rio de Janeiro - RJ',
+  'Rua Tupis, 171, Centro, Belo Horizonte - MG',
+  'Rua Marechal Deodoro, 630, Centro, Curitiba - PR',
+  'Rua dos Andradas, 1001, Centro Histórico, Porto Alegre - RS',
+  'Rua Chile, 8, Comércio, Salvador - BA',
+  'Alameda Santos, 200, Cerqueira César, São Paulo - SP',
+  'Rua Visconde de Pirajá, 550, Ipanema, Rio de Janeiro - RJ',
+  'Av. do Contorno, 6000, Funcionários, Belo Horizonte - MG',
+  'Rua Padre Anchieta, 2500, Bigorrilho, Curitiba - PR',
+  'Av. Ipiranga, 1200, Azenha, Porto Alegre - RS',
+  'Rua Marquês de Caravelas, 83, Barra, Salvador - BA',
+  'Rua Augusta, 890, Consolação, São Paulo - SP',
+  'Av. Atlântica, 3880, Copacabana, Rio de Janeiro - RJ',
+]
+
+const NOMES_RESPONSAVEIS = [
+  'Roberto Lima', 'Sandra Mendes', 'José Ferreira da Silva', 'Márcia Rocha',
+  'Paulo Carvalho Nunes', 'Cláudia Oliveira', 'Fernando Alves Monteiro', null,
+  'Vera dos Santos', 'Marcos Martins', 'Sônia de Almeida Costa', 'Fábio Lima',
+  'Cristina Ferreira', 'Antônio Rodrigues de Souza', null, 'Eliane Teixeira Lopes',
+  'Ricardo Neves', 'Patrícia de Carvalho', 'Henrique Moreira Silva', 'Simone Andrade',
+]
+
 // Dias úteis (seg–sex) entre duas datas (UTC)
 function diasUteis(inicio: Date, fim: Date): Date[] {
   const dias: Date[] = []
@@ -178,13 +223,22 @@ async function main() {
 
     const aluno = await prisma.aluno.upsert({
       where: { email: emailAluno },
-      update: {},
+      update: {
+        telefone:        TELEFONES[i],
+        rg:              RGS[i],
+        endereco:        ENDERECOS[i],
+        nomeResponsavel: NOMES_RESPONSAVEIS[i],
+      },
       create: {
-        nome: NOMES[i],
-        email: emailAluno,
-        hashedPassword: alunoPassword,
-        numeroCadastro: `CAD-2025-${String(i + 2).padStart(5, '0')}`,
-        status: 'ATIVO',
+        nome:            NOMES[i],
+        email:           emailAluno,
+        hashedPassword:  alunoPassword,
+        numeroCadastro:  `CAD-2025-${String(i + 2).padStart(5, '0')}`,
+        status:          'ATIVO',
+        telefone:        TELEFONES[i],
+        rg:              RGS[i],
+        endereco:        ENDERECOS[i],
+        nomeResponsavel: NOMES_RESPONSAVEIS[i],
       },
     })
 
