@@ -243,11 +243,22 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
   const [sortCol, setSortCol] = useState<SortCol>('nome')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [page, setPage] = useState(1)
+  const [busca, setBusca] = useState('')
 
   const pendentes = alunos.filter((a) => a.status === 'PENDENTE')
   const ativos    = alunos.filter((a) => a.status === 'ATIVO')
 
-  const sorted   = sortAlunos(alunos, sortCol, sortDir)
+  const termo = busca.trim().toLowerCase()
+  const filtrados = termo
+    ? alunos.filter(
+        (a) =>
+          a.nome.toLowerCase().includes(termo) ||
+          (a.email ?? '').toLowerCase().includes(termo) ||
+          (a.numeroCadastro ?? '').toLowerCase().includes(termo),
+      )
+    : alunos
+
+  const sorted     = sortAlunos(filtrados, sortCol, sortDir)
   const totalPages = Math.ceil(sorted.length / PAGE_SIZE)
   const paginated  = sorted.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE)
 
@@ -289,10 +300,28 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
         </button>
       </div>
 
+      {/* Busca */}
+      <div className="mb-4">
+        <input
+          type="search"
+          placeholder="Buscar por nome, e-mail ou nº cadastro..."
+          value={busca}
+          onChange={(e) => { setBusca(e.target.value); setPage(1) }}
+          className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-200 sm:max-w-sm"
+        />
+      </div>
+
       {/* Tabela */}
       {alunos.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 py-16 text-center">
           <p className="text-zinc-500">Nenhum aluno cadastrado ainda.</p>
+        </div>
+      ) : sorted.length === 0 ? (
+        <div className="rounded-xl border border-dashed border-zinc-300 py-16 text-center">
+          <p className="text-zinc-500">Nenhum aluno encontrado para &quot;{busca}&quot;.</p>
+          <button onClick={() => setBusca('')} className="mt-2 text-sm text-zinc-400 hover:text-zinc-700 hover:underline">
+            Limpar busca
+          </button>
         </div>
       ) : (
         <>
