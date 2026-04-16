@@ -26,21 +26,31 @@ export default async function AlunosPage() {
       numeroCadastro: true,
       status: true,
       createdAt: true,
+      matriculas: {
+        where: { status: 'APROVADA' },
+        select: { materia: { select: { turma: { select: { curso: { select: { nome: true } } } } } } },
+      },
     },
   })
 
-  const formatted = alunos.map((a) => ({
-    id: a.id,
-    nome: a.nome,
-    email: a.email,
-    emailResponsavel: a.emailResponsavel,
-    dataNascimento: a.dataNascimento
-      ? a.dataNascimento.toISOString().slice(0, 10)
-      : null,
-    numeroCadastro: a.numeroCadastro,
-    status: a.status,
-    createdAt: a.createdAt.toLocaleDateString('pt-BR'),
-  }))
+  const formatted = alunos.map((a) => {
+    const cursos = [...new Set(
+      a.matriculas.map((m) => m.materia.turma.curso.nome)
+    )]
+    return {
+      id: a.id,
+      nome: a.nome,
+      email: a.email,
+      emailResponsavel: a.emailResponsavel,
+      dataNascimento: a.dataNascimento
+        ? a.dataNascimento.toISOString().slice(0, 10)
+        : null,
+      numeroCadastro: a.numeroCadastro,
+      cursos,
+      status: a.status,
+      createdAt: a.createdAt.toLocaleDateString('pt-BR'),
+    }
+  })
 
   return (
     <div className="mx-auto max-w-5xl">
