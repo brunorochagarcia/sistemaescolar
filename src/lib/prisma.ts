@@ -1,11 +1,13 @@
-// Prisma 7 is driver-adapter-first — direct connection requires @prisma/adapter-pg
+// @prisma/adapter-neon uses @neondatabase/serverless (HTTP-based) instead of TCP.
+// This avoids the TCP handshake overhead on every serverless invocation,
+// which is the main cause of slow page loads on Vercel + Neon free tier.
 import { PrismaClient } from '@/generated/prisma/client'
-import { PrismaPg } from '@prisma/adapter-pg'
+import { PrismaNeon } from '@prisma/adapter-neon'
 
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) throw new Error('DATABASE_URL is not set')
-  const adapter = new PrismaPg({ connectionString })
+  const adapter = new PrismaNeon({ connectionString })
   return new PrismaClient({ adapter })
 }
 
