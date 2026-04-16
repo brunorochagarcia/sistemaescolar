@@ -37,6 +37,10 @@ export default async function AlunoPerfilPage({
       nome: true,
       email: true,
       emailResponsavel: true,
+      nomeResponsavel: true,
+      telefone: true,
+      rg: true,
+      endereco: true,
       numeroCadastro: true,
       dataNascimento: true,
       status: true,
@@ -97,18 +101,41 @@ export default async function AlunoPerfilPage({
               <dt className="text-zinc-400">E-mail</dt>
               <dd className="text-zinc-700">{aluno.email ?? '—'}</dd>
             </div>
-            {aluno.emailResponsavel && (
-              <div>
-                <dt className="text-zinc-400">E-mail responsável</dt>
-                <dd className="text-zinc-700">{aluno.emailResponsavel}</dd>
-              </div>
-            )}
             {aluno.dataNascimento && (
               <div>
                 <dt className="text-zinc-400">Nascimento</dt>
                 <dd className="text-zinc-700">
                   {aluno.dataNascimento.toLocaleDateString('pt-BR')}
                 </dd>
+              </div>
+            )}
+            {aluno.telefone && (
+              <div>
+                <dt className="text-zinc-400">Telefone</dt>
+                <dd className="text-zinc-700">{aluno.telefone}</dd>
+              </div>
+            )}
+            {aluno.rg && (
+              <div>
+                <dt className="text-zinc-400">RG</dt>
+                <dd className="text-zinc-700">{aluno.rg}</dd>
+              </div>
+            )}
+            {aluno.endereco && (
+              <div>
+                <dt className="text-zinc-400">Endereço</dt>
+                <dd className="text-zinc-700">{aluno.endereco}</dd>
+              </div>
+            )}
+            {(aluno.nomeResponsavel || aluno.emailResponsavel) && (
+              <div className="border-t border-zinc-100 pt-3">
+                <dt className="mb-1 text-xs font-medium uppercase tracking-wide text-zinc-400">Responsável</dt>
+                {aluno.nomeResponsavel && (
+                  <dd className="text-zinc-700">{aluno.nomeResponsavel}</dd>
+                )}
+                {aluno.emailResponsavel && (
+                  <dd className="text-zinc-500 text-xs">{aluno.emailResponsavel}</dd>
+                )}
               </div>
             )}
             <div>
