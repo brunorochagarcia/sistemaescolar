@@ -284,8 +284,10 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Alunos</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {ativos.length} ativo{ativos.length !== 1 ? 's' : ''}
-            {pendentes.length > 0 && (
+            {termo
+              ? `${filtrados.length} resultado${filtrados.length !== 1 ? 's' : ''} de ${ativos.length} ativo${ativos.length !== 1 ? 's' : ''}`
+              : `${ativos.length} ativo${ativos.length !== 1 ? 's' : ''}`}
+            {!termo && pendentes.length > 0 && (
               <span className="ml-2 font-medium text-amber-600">
                 · {pendentes.length} pendente{pendentes.length !== 1 ? 's' : ''} de aprovação
               </span>
