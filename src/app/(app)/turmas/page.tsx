@@ -1,34 +1,42 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { unstable_cache } from 'next/cache'
 import { redirect } from 'next/navigation'
 import { podeGerirAcademico, isDiretor } from '@/lib/auth/permissions'
 import { TurmasTable } from '@/components/turmas-table'
 
 export const metadata = { title: 'Turmas — Sistema Escolar' }
 
+const getTurmasData = unstable_cache(
+  () =>
+    prisma.curso.findMany({
+      orderBy: { nome: 'asc' },
+      select: {
+        id: true,
+        nome: true,
+        turmas: {
+          orderBy: [{ anoLetivo: 'desc' }, { nome: 'asc' }],
+          select: {
+            id: true,
+            nome: true,
+            turno: true,
+            anoLetivo: true,
+            cursoId: true,
+            _count: { select: { materias: true } },
+          },
+        },
+      },
+    }),
+  ['turmas-list'],
+  { revalidate: 30, tags: ['turmas', 'cursos'] },
+)
+
 export default async function TurmasPage() {
   const session = await auth()
   if (!session) redirect('/login')
   if (!podeGerirAcademico(session.user.role)) redirect('/dashboard')
 
-  const cursosRaw = await prisma.curso.findMany({
-    orderBy: { nome: 'asc' },
-    select: {
-      id: true,
-      nome: true,
-      turmas: {
-        orderBy: [{ anoLetivo: 'desc' }, { nome: 'asc' }],
-        select: {
-          id: true,
-          nome: true,
-          turno: true,
-          anoLetivo: true,
-          cursoId: true,
-          _count: { select: { materias: true } },
-        },
-      },
-    },
-  })
+  const cursosRaw = await getTurmasData()
 
   const grupos = cursosRaw.map((c) => ({
     id: c.id,

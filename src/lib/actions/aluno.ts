@@ -4,7 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { podeAprovarAluno } from '@/lib/auth/permissions'
 import bcrypt from 'bcryptjs'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import {
   registrarAlunoSchema,
   aprovarAlunoSchema,
@@ -116,6 +116,7 @@ export async function aprovarAluno(
       })
     })
 
+    revalidateTag('dashboard', {})
     return { ok: true, data: { numeroCadastro: updated.numeroCadastro! } }
   } catch (err: unknown) {
     const error = err as { code?: string }
@@ -162,6 +163,7 @@ export async function excluirAluno(formData: FormData): Promise<ActionResult> {
       where: { id: alunoId },
       data: { status: 'INATIVO' },
     })
+    revalidateTag('dashboard', {})
     return { ok: true }
   } catch (err) {
     console.error('[excluirAluno]', err)

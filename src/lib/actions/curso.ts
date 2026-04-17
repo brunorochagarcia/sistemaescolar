@@ -4,7 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { podeGerirAcademico, isDiretor } from '@/lib/auth/permissions'
 import { criarCursoSchema, editarCursoSchema, excluirCursoSchema } from '@/lib/schemas/curso'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -42,6 +42,9 @@ export async function criarCurso(formData: FormData): Promise<ActionResult<{ id:
   })
 
   revalidatePath('/cursos')
+  revalidateTag('cursos', {})
+  revalidateTag('turmas', {})
+  revalidateTag('dashboard', {})
   return { ok: true, data: { id: curso.id } }
 }
 
@@ -81,6 +84,9 @@ export async function editarCurso(formData: FormData): Promise<ActionResult> {
   })
 
   revalidatePath('/cursos')
+  revalidateTag('cursos', {})
+  revalidateTag('turmas', {})
+  revalidateTag('dashboard', {})
   return { ok: true }
 }
 
@@ -108,5 +114,8 @@ export async function excluirCurso(formData: FormData): Promise<ActionResult> {
   await prisma.curso.delete({ where: { id: parsed.data.id } })
 
   revalidatePath('/cursos')
+  revalidateTag('cursos', {})
+  revalidateTag('turmas', {})
+  revalidateTag('dashboard', {})
   return { ok: true }
 }

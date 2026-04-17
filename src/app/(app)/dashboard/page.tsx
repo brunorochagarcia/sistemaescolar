@@ -1,62 +1,32 @@
 import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
+import { unstable_cache } from 'next/cache'
 import Link from 'next/link'
 import { podeAprovarAluno, podeGerirFinanceiro, isDiretor } from '@/lib/auth/permissions'
 
 export const metadata = { title: 'Dashboard — Sistema Escolar' }
 
-export default async function DashboardPage() {
-  const session = await auth()
-  if (!session) return null
-
-  const role = session.user.role
-  const temAcademia = podeAprovarAluno(role)
-  const temFinanceiro = podeGerirFinanceiro(role)
-  const ehDiretor = isDiretor(role)
-
-  const now = new Date()
-  const inicioMes = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1))
-  const fimMes = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1))
-
-  const [
-    totalAtivos,
-    totalPendentes,
-    inadimplentes,
-    totalVencidoAgg,
-    receitaMesAgg,
-    alunosPendentesLista,
-    cursosData,
-  ] = await Promise.all([
-    temAcademia
-      ? prisma.aluno.count({ where: { status: 'ATIVO' } })
-      : null,
-    temAcademia
-      ? prisma.aluno.count({ where: { status: 'PENDENTE' } })
-      : null,
-    temFinanceiro
-      ? prisma.aluno.count({
+// KPI counts are global (not user-specific) and update infrequently.
+// Cache for 60s to avoid re-querying on every navigation to the dashboard.
+// The pending student list is intentionally excluded — kept fresh so the
+// "Aprovar" list always reflects the current queue.
+const getDashboardKPIs = unstable_cache(
+  async (mesInicioISO: string, mesFimISO: string) => {
+    const inicioMes = new Date(mesInicioISO)
+    const fimMes = new Date(mesFimISO)
+    const [totalAtivos, totalPendentes, inadimplentes, totalVencidoAgg, receitaMesAgg, cursosData] =
+      await Promise.all([
+        prisma.aluno.count({ where: { status: 'ATIVO' } }),
+        prisma.aluno.count({ where: { status: 'PENDENTE' } }),
+        prisma.aluno.count({
           where: { status: 'ATIVO', boletos: { some: { status: 'VENCIDO' } } },
-        })
-      : null,
-    temFinanceiro
-      ? prisma.boleto.aggregate({ _sum: { valor: true }, where: { status: 'VENCIDO' } })
-      : null,
-    temFinanceiro
-      ? prisma.boleto.aggregate({
+        }),
+        prisma.boleto.aggregate({ _sum: { valor: true }, where: { status: 'VENCIDO' } }),
+        prisma.boleto.aggregate({
           _sum: { valor: true },
           where: { status: 'PAGO', dataPagamento: { gte: inicioMes, lt: fimMes } },
-        })
-      : null,
-    temAcademia
-      ? prisma.aluno.findMany({
-          where: { status: 'PENDENTE' },
-          orderBy: { createdAt: 'asc' },
-          take: 5,
-          select: { id: true, nome: true, email: true, createdAt: true },
-        })
-      : null,
-    ehDiretor
-      ? prisma.curso.findMany({
+        }),
+        prisma.curso.findMany({
           where: { status: 'ATIVO' },
           orderBy: { nome: 'asc' },
           select: {
@@ -82,9 +52,41 @@ export default async function DashboardPage() {
               },
             },
           },
+        }),
+      ])
+    return { totalAtivos, totalPendentes, inadimplentes, totalVencidoAgg, receitaMesAgg, cursosData }
+  },
+  ['dashboard-kpis'],
+  { revalidate: 60, tags: ['dashboard'] },
+)
+
+export default async function DashboardPage() {
+  const session = await auth()
+  if (!session) return null
+
+  const role = session.user.role
+  const temAcademia = podeAprovarAluno(role)
+  const temFinanceiro = podeGerirFinanceiro(role)
+  const ehDiretor = isDiretor(role)
+
+  const now = new Date()
+  const inicioMes = new Date(Date.UTC(now.getFullYear(), now.getMonth(), 1))
+  const fimMes = new Date(Date.UTC(now.getFullYear(), now.getMonth() + 1, 1))
+
+  // Run cached KPIs + fresh pending list in parallel
+  const [kpis, alunosPendentesLista] = await Promise.all([
+    getDashboardKPIs(inicioMes.toISOString(), fimMes.toISOString()),
+    temAcademia
+      ? prisma.aluno.findMany({
+          where: { status: 'PENDENTE' },
+          orderBy: { createdAt: 'asc' },
+          take: 5,
+          select: { id: true, nome: true, email: true, createdAt: true },
         })
       : null,
   ])
+
+  const { totalAtivos, totalPendentes, inadimplentes, totalVencidoAgg, receitaMesAgg, cursosData } = kpis
 
   const totalVencido = Number(totalVencidoAgg?._sum.valor ?? 0)
   const receitaMes = Number(receitaMesAgg?._sum.valor ?? 0)

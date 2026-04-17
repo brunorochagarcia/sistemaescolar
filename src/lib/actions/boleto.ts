@@ -6,7 +6,7 @@ import { env } from '@/lib/env'
 import { podeGerirFinanceiro } from '@/lib/auth/permissions'
 import { marcarPagoSchema, cancelarBoletoSchema, enviarEmailBoletoSchema } from '@/lib/schemas/boleto'
 import { calcularValorBoleto } from '@/lib/calculo/boleto'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 import { Resend } from 'resend'
 
 type ActionResult<T = undefined> =
@@ -149,6 +149,7 @@ export async function marcarPago(formData: FormData): Promise<ActionResult> {
   })
 
   revalidatePath('/financeiro')
+  revalidateTag('dashboard', {})
   return { ok: true }
 }
 
@@ -178,6 +179,7 @@ export async function cancelarBoleto(formData: FormData): Promise<ActionResult> 
   })
 
   revalidatePath('/financeiro')
+  revalidateTag('dashboard', {})
   return { ok: true }
 }
 

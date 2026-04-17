@@ -4,7 +4,7 @@ import { auth } from '@/auth'
 import { prisma } from '@/lib/prisma'
 import { podeGerirAcademico, isDiretor } from '@/lib/auth/permissions'
 import { criarTurmaSchema, editarTurmaSchema, excluirTurmaSchema } from '@/lib/schemas/turma'
-import { revalidatePath } from 'next/cache'
+import { revalidatePath, revalidateTag } from 'next/cache'
 
 type ActionResult<T = undefined> =
   | { ok: true; data?: T }
@@ -42,6 +42,8 @@ export async function criarTurma(formData: FormData): Promise<ActionResult<{ id:
   })
 
   revalidatePath('/turmas')
+  revalidateTag('turmas', {})
+  revalidateTag('dashboard', {})
   return { ok: true, data: { id: turma.id } }
 }
 
@@ -77,6 +79,8 @@ export async function editarTurma(formData: FormData): Promise<ActionResult> {
 
   revalidatePath('/turmas')
   revalidatePath(`/turmas/${id}`)
+  revalidateTag('turmas', {})
+  revalidateTag('dashboard', {})
   return { ok: true }
 }
 
@@ -106,5 +110,7 @@ export async function excluirTurma(formData: FormData): Promise<ActionResult> {
   await prisma.turma.delete({ where: { id: parsed.data.id } })
 
   revalidatePath('/turmas')
+  revalidateTag('turmas', {})
+  revalidateTag('dashboard', {})
   return { ok: true }
 }
