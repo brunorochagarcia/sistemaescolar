@@ -15,10 +15,12 @@ const statusLabels: Record<StatusMatricula, { label: string; className: string }
   REJEITADA: { label: 'Rejeitada', className: 'bg-red-100 text-red-600' },
 }
 
+const PAGE_SIZE = 50
+
 export default async function MatriculasPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; turmaId?: string }>
+  searchParams: Promise<{ status?: string; turmaId?: string; page?: string }>
 }) {
   const session = await auth()
   if (!session) redirect('/login')
@@ -26,20 +28,27 @@ export default async function MatriculasPage({
     redirect('/dashboard')
   }
 
-  const { status, turmaId } = await searchParams
+  const { status, turmaId, page: pageParam } = await searchParams
   const isProfessor = session.user.role === 'PROFESSOR'
   const isAluno = session.user.role === 'ALUNO'
   const aprovacaoImediata = podeAprovarMatricula(session.user.role)
 
-  const [matriculas, alunos, materias, turmas] = await Promise.all([
+  const page = Math.max(1, parseInt(pageParam ?? '1') || 1)
+  const skip = (page - 1) * PAGE_SIZE
+
+  const where = {
+    ...(status ? { status: status as StatusMatricula } : {}),
+    ...(turmaId ? { materia: { turmaId } } : {}),
+    ...(isProfessor ? { materia: { instrutorId: session.user.id } } : {}),
+    ...(isAluno ? { alunoId: session.user.id } : {}),
+  }
+
+  const [matriculas, totalCount, alunos, materias, turmas] = await Promise.all([
     prisma.matricula.findMany({
-      where: {
-        ...(status ? { status: status as StatusMatricula } : {}),
-        ...(turmaId ? { materia: { turmaId } } : {}),
-        ...(isProfessor ? { materia: { instrutorId: session.user.id } } : {}),
-        ...(isAluno ? { alunoId: session.user.id } : {}),
-      },
+      where,
       orderBy: [{ status: 'asc' }, { dataInicio: 'desc' }],
+      skip,
+      take: PAGE_SIZE,
       select: {
         id: true,
         status: true,
@@ -55,6 +64,7 @@ export default async function MatriculasPage({
         },
       },
     }),
+    prisma.matricula.count({ where }),
     // Data for the "Nova matrícula" modal — only needed for non-professor roles
     isProfessor
       ? Promise.resolve([])
@@ -77,6 +87,7 @@ export default async function MatriculasPage({
         }),
   ])
 
+  const totalPages = Math.ceil(totalCount / PAGE_SIZE)
   const pendentes = matriculas.filter((m) => m.status === 'PENDENTE').length
 
   return (
@@ -85,10 +96,10 @@ export default async function MatriculasPage({
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Matrículas</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {matriculas.length} matrícula{matriculas.length !== 1 ? 's' : ''}
+            {totalCount} matrícula{totalCount !== 1 ? 's' : ''}
             {pendentes > 0 && (
               <span className="ml-2 font-medium text-amber-600">
-                · {pendentes} pendente{pendentes !== 1 ? 's' : ''}
+                · {pendentes} pendente{pendentes !== 1 ? 's' : ''} nesta página
               </span>
             )}
           </p>
@@ -182,6 +193,65 @@ export default async function MatriculasPage({
           </table>
         </div>
       )}
+
+      {totalPages > 1 && (
+        <Pagination
+          page={page}
+          totalPages={totalPages}
+          basePath="/matriculas"
+          params={{ status, turmaId }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+function buildHref(basePath: string, params: Record<string, string | undefined>, page: number) {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v) qs.set(k, v)
+  }
+  if (page > 1) qs.set('page', String(page))
+  const q = qs.toString()
+  return q ? `${basePath}?${q}` : basePath
+}
+
+function Pagination({
+  page,
+  totalPages,
+  basePath,
+  params,
+}: {
+  page: number
+  totalPages: number
+  basePath: string
+  params: Record<string, string | undefined>
+}) {
+  return (
+    <div className="mt-4 flex items-center justify-between text-sm text-zinc-500">
+      <span>
+        Página {page} de {totalPages}
+      </span>
+      <div className="flex gap-2">
+        {page > 1 && (
+          <Link
+            href={buildHref(basePath, params, page - 1)}
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+          >
+            ← Anterior
+          </Link>
+        )}
+        {page < totalPages && (
+          <Link
+            href={buildHref(basePath, params, page + 1)}
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+          >
+            Próxima →
+          </Link>
+        )}
+      </div>
     </div>
   )
 }

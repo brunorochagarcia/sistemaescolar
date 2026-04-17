@@ -9,6 +9,8 @@ import { MesFilter } from './mes-filter'
 
 export const metadata = { title: 'Financeiro — Sistema Escolar' }
 
+const PAGE_SIZE = 50
+
 const statusConfig: Record<StatusBoleto, { label: string; className: string }> = {
   PENDENTE: { label: 'Pendente', className: 'bg-amber-100 text-amber-700' },
   PAGO: { label: 'Pago', className: 'bg-green-100 text-green-700' },
@@ -19,13 +21,15 @@ const statusConfig: Record<StatusBoleto, { label: string; className: string }> =
 export default async function FinanceiroPage({
   searchParams,
 }: {
-  searchParams: Promise<{ status?: string; mes?: string; alunoId?: string }>
+  searchParams: Promise<{ status?: string; mes?: string; alunoId?: string; page?: string }>
 }) {
   const session = await auth()
   if (!session) redirect('/login')
   if (!podeGerirFinanceiro(session.user.role)) redirect('/dashboard')
 
-  const { status, mes, alunoId } = await searchParams
+  const { status, mes, alunoId, page: pageParam } = await searchParams
+  const page = Math.max(1, parseInt(pageParam ?? '1') || 1)
+  const skip = (page - 1) * PAGE_SIZE
 
   // Filtro por mês: YYYY-MM → primeiro e último dia do mês
   let mesFilter: { gte: Date; lte: Date } | undefined
@@ -37,24 +41,31 @@ export default async function FinanceiroPage({
     }
   }
 
-  const boletos = await prisma.boleto.findMany({
-    where: {
-      ...(status ? { status: status as StatusBoleto } : {}),
-      ...(mesFilter ? { mesReferencia: mesFilter } : {}),
-      ...(alunoId ? { alunoId } : {}),
-    },
-    orderBy: [{ mesReferencia: 'desc' }, { aluno: { nome: 'asc' } }],
-    select: {
-      id: true,
-      valor: true,
-      mesReferencia: true,
-      dataVencimento: true,
-      dataPagamento: true,
-      status: true,
-      aluno: { select: { id: true, nome: true, numeroCadastro: true } },
-      curso: { select: { nome: true } },
-    },
-  })
+  const where = {
+    ...(status ? { status: status as StatusBoleto } : {}),
+    ...(mesFilter ? { mesReferencia: mesFilter } : {}),
+    ...(alunoId ? { alunoId } : {}),
+  }
+
+  const [boletos, totalCount] = await Promise.all([
+    prisma.boleto.findMany({
+      where,
+      orderBy: [{ mesReferencia: 'desc' }, { aluno: { nome: 'asc' } }],
+      skip,
+      take: PAGE_SIZE,
+      select: {
+        id: true,
+        valor: true,
+        mesReferencia: true,
+        dataVencimento: true,
+        dataPagamento: true,
+        status: true,
+        aluno: { select: { id: true, nome: true, numeroCadastro: true } },
+        curso: { select: { nome: true } },
+      },
+    }),
+    prisma.boleto.count({ where }),
+  ])
 
   const totalPendente = boletos
     .filter((b) => b.status === 'PENDENTE' || b.status === 'VENCIDO')
@@ -70,15 +81,15 @@ export default async function FinanceiroPage({
         <div>
           <h1 className="text-2xl font-semibold text-zinc-900">Financeiro</h1>
           <p className="mt-1 text-sm text-zinc-500">
-            {boletos.length} boleto{boletos.length !== 1 ? 's' : ''}
+            {totalCount} boleto{totalCount !== 1 ? 's' : ''}
             {totalPendente > 0 && (
               <span className="ml-2 text-amber-600">
-                · R$ {totalPendente.toFixed(2)} a receber
+                · R$ {totalPendente.toFixed(2)} a receber (pág. atual)
               </span>
             )}
             {totalPago > 0 && (
               <span className="ml-2 text-green-600">
-                · R$ {totalPago.toFixed(2)} recebido
+                · R$ {totalPago.toFixed(2)} recebido (pág. atual)
               </span>
             )}
           </p>
@@ -180,6 +191,65 @@ export default async function FinanceiroPage({
           </table>
         </div>
       )}
+
+      {Math.ceil(totalCount / PAGE_SIZE) > 1 && (
+        <Pagination
+          page={page}
+          totalPages={Math.ceil(totalCount / PAGE_SIZE)}
+          basePath="/financeiro"
+          params={{ status, mes, alunoId }}
+        />
+      )}
+    </div>
+  )
+}
+
+// ─── Pagination ───────────────────────────────────────────────────────────────
+
+function buildHref(basePath: string, params: Record<string, string | undefined>, targetPage: number) {
+  const qs = new URLSearchParams()
+  for (const [k, v] of Object.entries(params)) {
+    if (v) qs.set(k, v)
+  }
+  if (targetPage > 1) qs.set('page', String(targetPage))
+  const q = qs.toString()
+  return q ? `${basePath}?${q}` : basePath
+}
+
+function Pagination({
+  page,
+  totalPages,
+  basePath,
+  params,
+}: {
+  page: number
+  totalPages: number
+  basePath: string
+  params: Record<string, string | undefined>
+}) {
+  return (
+    <div className="mt-4 flex items-center justify-between text-sm text-zinc-500">
+      <span>
+        Página {page} de {totalPages}
+      </span>
+      <div className="flex gap-2">
+        {page > 1 && (
+          <Link
+            href={buildHref(basePath, params, page - 1)}
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+          >
+            ← Anterior
+          </Link>
+        )}
+        {page < totalPages && (
+          <Link
+            href={buildHref(basePath, params, page + 1)}
+            className="rounded-lg border border-zinc-200 px-3 py-1.5 text-xs font-medium hover:bg-zinc-50"
+          >
+            Próxima →
+          </Link>
+        )}
+      </div>
     </div>
   )
 }
