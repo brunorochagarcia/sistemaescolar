@@ -106,12 +106,14 @@ export default async function FinanceiroPage({
       {boletos.length === 0 ? (
         <div className="rounded-xl border border-dashed border-zinc-300 py-16 text-center">
           <p className="text-zinc-500">Nenhum boleto encontrado.</p>
-          <p className="mt-1 text-xs text-zinc-400">
-            Teste local:{' '}
-            <code className="rounded bg-zinc-100 px-1 py-0.5 font-mono">
-              curl -X POST http://localhost:3000/api/cron/boletos -H &quot;Authorization: Bearer change-me-before-production&quot;
-            </code>
-          </p>
+          {process.env.NODE_ENV === 'development' && (
+            <p className="mt-1 text-xs text-zinc-400">
+              Teste local:{' '}
+              <code className="rounded bg-zinc-100 px-1 py-0.5 font-mono">
+                curl -X POST http://localhost:3000/api/cron/boletos -H &quot;Authorization: Bearer change-me-before-production&quot;
+              </code>
+            </p>
+          )}
         </div>
       ) : (
         <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
