@@ -29,11 +29,6 @@ export default async function FrequenciaAlunoPage({
 
   const [{ id }, { ano: anoParam }] = await Promise.all([params, searchParams])
 
-  const anoAtual = new Date().getFullYear()
-  const ano = anoParam ? parseInt(anoParam) : anoAtual
-  const inicioAno = new Date(Date.UTC(ano, 0, 1))
-  const fimAno = new Date(Date.UTC(ano + 1, 0, 1))
-
   // ─── Buscar aluno + todas as queries em paralelo ───────────────────────────
   const aluno = await prisma.aluno.findUnique({
     where: { id },
@@ -42,7 +37,7 @@ export default async function FrequenciaAlunoPage({
   if (!aluno) notFound()
 
   // Contagens gerais (leves — usam índice em alunoId)
-  const [total, presentes, primeiraPresenca] = await Promise.all([
+  const [total, presentes, primeiraPresenca, ultimaPresenca] = await Promise.all([
     prisma.presenca.count({ where: { alunoId: id } }),
     prisma.presenca.count({ where: { alunoId: id, status: { in: ['PRESENTE', 'ATRASADO'] } } }),
     prisma.presenca.findFirst({
@@ -50,16 +45,28 @@ export default async function FrequenciaAlunoPage({
       orderBy: { data: 'asc' },
       select: { data: true },
     }),
+    prisma.presenca.findFirst({
+      where: { alunoId: id },
+      orderBy: { data: 'desc' },
+      select: { data: true },
+    }),
   ])
 
   const percentualGeral = total > 0 ? (presentes / total) * 100 : 0
 
   // Anos disponíveis para o seletor
+  const anoAtual = new Date().getFullYear()
   const anoInicio = primeiraPresenca?.data.getFullYear() ?? anoAtual
   const anosDisponiveis = Array.from(
     { length: anoAtual - anoInicio + 1 },
     (_, i) => anoAtual - i,
   )
+
+  // Default to the most recent year with actual data, not the current calendar year
+  const anoDefault = ultimaPresenca?.data.getFullYear() ?? anoAtual
+  const ano = anoParam ? parseInt(anoParam) : anoDefault
+  const inicioAno = new Date(Date.UTC(ano, 0, 1))
+  const fimAno = new Date(Date.UTC(ano + 1, 0, 1))
 
   // Resumo por escopo via groupBy — sem carregar todos os registros
   const [totalPorEscopo, presentesPorEscopo] = await Promise.all([
