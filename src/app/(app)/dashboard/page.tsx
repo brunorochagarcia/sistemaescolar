@@ -276,12 +276,7 @@ export default async function DashboardPage() {
                 {cursos.map((c) => (
                   <tr key={c.id} className="hover:bg-zinc-50">
                     <td className="px-4 py-3">
-                      <Link
-                        href={`/cursos/${c.id}`}
-                        className="font-medium text-zinc-900 hover:underline"
-                      >
-                        {c.nome}
-                      </Link>
+                      <span className="font-medium text-zinc-900">{c.nome}</span>
                     </td>
                     <td className="px-4 py-3 text-right text-zinc-600">
                       {c.totalTurmas}
