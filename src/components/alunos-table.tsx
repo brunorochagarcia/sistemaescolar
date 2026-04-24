@@ -2,9 +2,9 @@
 
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
-import Link from 'next/link'
 import { editarAluno, criarAlunoAdmin, excluirAluno } from '@/lib/actions/aluno'
 import { AlunoActions } from './aluno-actions'
+import { AlunoPerfilModal } from './aluno-perfil-modal'
 
 export interface AlunoRow {
   id: string
@@ -271,6 +271,7 @@ interface AlunosTableProps {
 export function AlunosTable({ alunos }: AlunosTableProps) {
   const [editando, setEditando] = useState<AlunoRow | null>(null)
   const [criando, setCriando] = useState(false)
+  const [perfilId, setPerfilId] = useState<string | null>(null)
   const [sortCol, setSortCol] = useState<SortCol>('nome')
   const [sortDir, setSortDir] = useState<SortDir>('asc')
   const [page, setPage] = useState(1)
@@ -390,9 +391,13 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
                   return (
                     <tr key={aluno.id} className="hover:bg-zinc-50">
                       <td className="px-4 py-3 font-medium">
-                        <Link href={`/alunos/${aluno.id}`} title={aluno.nome} className="text-zinc-900 hover:underline">
+                        <button
+                          onClick={() => setPerfilId(aluno.id)}
+                          title={aluno.nome}
+                          className="text-left text-zinc-900 hover:underline"
+                        >
                           {primeiroEUltimoNome(aluno.nome)}
-                        </Link>
+                        </button>
                       </td>
                       <td className="px-4 py-3 font-mono text-xs text-zinc-500">
                         {aluno.numeroCadastro ?? '—'}
@@ -463,8 +468,9 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
       )}
 
       {/* Modais */}
-      {editando && <EditarModal aluno={editando} onClose={() => setEditando(null)} />}
-      {criando  && <CriarModal onClose={() => setCriando(false)} />}
+      {editando  && <EditarModal aluno={editando} onClose={() => setEditando(null)} />}
+      {criando   && <CriarModal onClose={() => setCriando(false)} />}
+      {perfilId  && <AlunoPerfilModal alunoId={perfilId} onClose={() => setPerfilId(null)} />}
     </>
   )
 }

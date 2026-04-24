@@ -17,6 +17,19 @@ type ActionResult<T = undefined> =
   | { ok: true; data?: T }
   | { ok: false; error: string }
 
+type PerfilAlunoData = {
+  id: string; nome: string; email: string | null; cpf: string | null
+  emailResponsavel: string | null; nomeResponsavel: string | null
+  telefone: string | null; rg: string | null; endereco: string | null
+  numeroCadastro: string | null; dataNascimento: string | null
+  status: 'ATIVO' | 'PENDENTE' | 'INATIVO'; createdAt: string
+  matriculas: Array<{
+    id: string; status: 'PENDENTE' | 'APROVADA' | 'REJEITADA'; dataInicio: string
+    materia: { id: string; nome: string; turma: { id: string; nome: string } }
+  }>
+}
+
+
 // ─── Registrar Aluno (public — no auth required) ────────────────────────────
 // Creates an Aluno with status PENDENTE for staff to review
 export async function registrarAluno(
@@ -273,5 +286,57 @@ export async function criarAlunoAdmin(
     if (e.code === 'P2002') return { ok: false, error: 'Este e-mail já está cadastrado.' }
     console.error('[criarAlunoAdmin]', err)
     return { ok: false, error: 'Erro interno. Tente novamente.' }
+  }
+}
+
+// ─── Buscar Perfil do Aluno (para o modal) ───────────────────────────────────
+export async function buscarPerfilAluno(
+  id: string
+): Promise<ActionResult<PerfilAlunoData>> {
+  const session = await auth()
+  if (!session) return { ok: false, error: 'Não autenticado.' }
+  if (!podeAprovarAluno(session.user.role)) return { ok: false, error: 'Sem permissão.' }
+
+  const aluno = await prisma.aluno.findUnique({
+    where: { id },
+    select: {
+      id: true, nome: true, email: true, cpf: true,
+      emailResponsavel: true, nomeResponsavel: true,
+      telefone: true, rg: true, endereco: true,
+      numeroCadastro: true, dataNascimento: true, status: true, createdAt: true,
+      matriculas: {
+        orderBy: { dataInicio: 'desc' },
+        select: {
+          id: true, status: true, dataInicio: true,
+          materia: { select: { id: true, nome: true, turma: { select: { id: true, nome: true } } } },
+        },
+      },
+    },
+  })
+  if (!aluno) return { ok: false, error: 'Aluno não encontrado.' }
+
+  return {
+    ok: true,
+    data: {
+      id: aluno.id,
+      nome: aluno.nome,
+      email: aluno.email,
+      cpf: aluno.cpf,
+      emailResponsavel: aluno.emailResponsavel,
+      nomeResponsavel: aluno.nomeResponsavel,
+      telefone: aluno.telefone,
+      rg: aluno.rg,
+      endereco: aluno.endereco,
+      numeroCadastro: aluno.numeroCadastro,
+      dataNascimento: aluno.dataNascimento ? aluno.dataNascimento.toLocaleDateString('pt-BR') : null,
+      status: aluno.status,
+      createdAt: aluno.createdAt.toLocaleDateString('pt-BR'),
+      matriculas: aluno.matriculas.map((m) => ({
+        id: m.id,
+        status: m.status,
+        dataInicio: m.dataInicio.toLocaleDateString('pt-BR'),
+        materia: { id: m.materia.id, nome: m.materia.nome, turma: { id: m.materia.turma.id, nome: m.materia.turma.nome } },
+      })),
+    },
   }
 }
