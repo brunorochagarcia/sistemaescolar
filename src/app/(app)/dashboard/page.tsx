@@ -253,7 +253,7 @@ export default async function DashboardPage() {
       {ehDiretor && cursos.length > 0 && (
         <section>
           <SectionTitle>Por curso</SectionTitle>
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
             <table className="w-full text-sm">
               <thead className="border-b border-zinc-100 bg-zinc-50">
                 <tr>
@@ -377,7 +377,7 @@ function StatCard({
 
   const inner = (
     <div className={`rounded-xl border p-4 transition-colors ${card} ${href ? 'hover:opacity-80' : ''}`}>
-      <p className={`text-2xl font-bold ${valueColor}`}>{value}</p>
+      <p className={`truncate text-xl font-bold sm:text-2xl ${valueColor}`}>{value}</p>
       <p className="mt-1 text-sm text-zinc-500">{label}</p>
     </div>
   )

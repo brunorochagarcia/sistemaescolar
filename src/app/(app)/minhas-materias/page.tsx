@@ -58,7 +58,7 @@ export default async function MinhasMateriaPage() {
       ) : (
         <div className="space-y-6">
           {materias.map((materia) => (
-            <div key={materia.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+            <div key={materia.id} className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
               <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50 px-4 py-3">
                 <div>
                   <p className="font-medium text-zinc-900">{materia.nome}</p>

@@ -136,7 +136,7 @@ export default async function MatriculasPage({
           <p className="text-zinc-500">Nenhuma matrícula encontrada.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-100 bg-zinc-50">
               <tr>

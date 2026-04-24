@@ -175,7 +175,7 @@ export default async function MateriaDetailPage({
           {linhas.map((linha) => (
             <div
               key={linha.matriculaId}
-              className="overflow-hidden rounded-xl border border-zinc-200 bg-white"
+              className="overflow-x-auto rounded-xl border border-zinc-200 bg-white"
             >
               {/* Cabeçalho do aluno */}
               <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50 px-5 py-3">

@@ -127,7 +127,7 @@ export default async function FinanceiroPage({
           )}
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-100 bg-zinc-50">
               <tr>

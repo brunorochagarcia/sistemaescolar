@@ -144,7 +144,7 @@ export default async function BoletimAlunoPage({
                   const mediaTurma = calcularMediaTurma(mediasTurma)
 
                   return (
-                    <div key={turmaId} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+                    <div key={turmaId} className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
                       <div className="flex items-center justify-between border-b border-zinc-100 bg-zinc-50 px-4 py-3">
                         <p className="font-medium text-zinc-900">{turmaNome}</p>
                         {mediaTurma !== null && (

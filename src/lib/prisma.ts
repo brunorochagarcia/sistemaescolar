@@ -1,28 +1,27 @@
-// @prisma/adapter-neon uses @neondatabase/serverless (HTTP-based) instead of TCP.
-// This avoids the TCP handshake overhead on every serverless invocation,
-// which is the main cause of slow page loads on Vercel + Neon free tier.
+// On Neon: use PrismaNeon (HTTP-based) to avoid TCP handshake overhead on
+// every serverless invocation. The Neon HTTP driver uses fetch internally, so
+// we opt out of Next.js data cache (cache: 'no-store') to prevent stale reads.
 //
-// IMPORTANT: Next.js App Router caches all `fetch` calls automatically.
-// The Neon HTTP driver uses fetch internally, so without `cache: 'no-store'`
-// Next.js would cache database responses and serve stale data across requests
-// (e.g., a filtered query would return the same result as an unfiltered one).
+// Locally: use PrismaPg (standard TCP) since the Neon HTTP driver only works
+// with Neon endpoints. Adapter is chosen by DATABASE_URL at runtime.
 import { PrismaClient } from '@/generated/prisma/client'
 import { PrismaNeon } from '@prisma/adapter-neon'
+import { PrismaPg } from '@prisma/adapter-pg'
 import { neonConfig } from '@neondatabase/serverless'
 
-// Opt out of Next.js data cache for all Neon HTTP requests
 neonConfig.fetchFunction = (url: RequestInfo | URL, init?: RequestInit) =>
   fetch(url, { ...init, cache: 'no-store' })
 
 function createPrismaClient() {
   const connectionString = process.env.DATABASE_URL
   if (!connectionString) throw new Error('DATABASE_URL is not set')
-  const adapter = new PrismaNeon({ connectionString })
+  const adapter = connectionString.includes('neon.tech')
+    ? new PrismaNeon({ connectionString })
+    : new PrismaPg({ connectionString })
   return new PrismaClient({ adapter })
 }
 
 // Singleton pattern — prevents multiple PrismaClient instances during hot reload
-// Without this, each reload creates a new client and exhausts the connection pool
 const globalForPrisma = globalThis as unknown as { prisma?: PrismaClient }
 
 export const prisma = globalForPrisma.prisma ?? createPrismaClient()

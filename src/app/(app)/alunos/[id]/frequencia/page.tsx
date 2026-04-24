@@ -175,7 +175,7 @@ export default async function FrequenciaAlunoPage({
       {escopos.length > 0 && (
         <div className="mb-6">
           <h3 className="mb-3 text-sm font-semibold text-zinc-700">Por matéria / turma</h3>
-          <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+          <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
             <table className="w-full text-sm">
               <thead className="border-b border-zinc-100 bg-zinc-50">
                 <tr>
@@ -234,7 +234,7 @@ export default async function FrequenciaAlunoPage({
           <p className="text-zinc-500">Nenhum registro em {ano}.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-100 bg-zinc-50">
               <tr>

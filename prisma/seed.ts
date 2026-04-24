@@ -208,7 +208,7 @@ function notaSim(p: PerfilAluno, ai: number, mi: number, av: number): number {
 }
 
 function boletoStatusSim(p: PerfilAluno, vencimento: Date): 'PAGO' | 'PENDENTE' | 'VENCIDO' {
-  const hoje = new Date('2026-04-16T00:00:00Z')
+  const hoje = new Date('2026-04-24T00:00:00Z')
   if (p === 'inadimplente' || p === 'reprova_inadimplente') {
     return vencimento < hoje ? 'VENCIDO' : 'PENDENTE'
   }
@@ -260,7 +260,7 @@ function periodoTurma(ano: number) {
   }
   return {
     inicio: new Date('2026-02-01T00:00:00.000Z'),
-    fim:    new Date('2026-04-15T00:00:00.000Z'),
+    fim:    new Date('2026-04-24T00:00:00.000Z'),
   }
 }
 
@@ -397,7 +397,7 @@ async function main() {
   await prisma.nota.deleteMany({ where: { matriculaId: { in: seedMatriculaIds } } })
   await prisma.presenca.deleteMany({ where: { alunoId: { in: seedAlunoIds } } })
 
-  const diasOriginal   = diasUteis(new Date('2026-02-01T00:00:00Z'), new Date('2026-04-15T00:00:00Z'))
+  const diasOriginal   = diasUteis(new Date('2026-02-01T00:00:00Z'), new Date('2026-04-24T00:00:00Z'))
   const avalOriginal   = [
     { mes: 2, data: new Date('2026-02-28T12:00:00Z'), descricao: 'Prova de Fevereiro' },
     { mes: 3, data: new Date('2026-03-31T12:00:00Z'), descricao: 'Prova de Março' },

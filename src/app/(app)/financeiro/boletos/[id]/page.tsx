@@ -80,7 +80,7 @@ export default async function BoletoDetailPage({
         </div>
       </div>
 
-      <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+      <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
         {/* Cabeçalho */}
         <div className="border-b border-zinc-100 bg-zinc-50 px-6 py-4">
           <p className="text-lg font-semibold text-zinc-900">

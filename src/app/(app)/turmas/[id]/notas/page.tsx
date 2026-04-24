@@ -83,7 +83,7 @@ export default async function NotasTurmaPage({
               !isProfessor || materia.instrutorId === session.user.id
 
             return (
-              <div key={materia.id} className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+              <div key={materia.id} className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
                 <div className="border-b border-zinc-100 bg-zinc-50 px-5 py-3">
                   <p className="font-semibold text-zinc-900">{materia.nome}</p>
                   <p className="text-xs text-zinc-400">

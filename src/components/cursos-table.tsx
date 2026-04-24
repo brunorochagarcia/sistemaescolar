@@ -21,12 +21,14 @@ function Modal({ title, onClose, children }: { title: string; onClose: () => voi
       className="fixed inset-0 z-50 flex items-center justify-center bg-black/40 p-4"
       onClick={(e) => { if (e.target === e.currentTarget) onClose() }}
     >
-      <div className="w-full max-w-md rounded-2xl bg-white p-6 shadow-xl">
-        <div className="mb-5 flex items-center justify-between">
+      <div className="flex max-h-[90vh] w-full max-w-md flex-col rounded-2xl bg-white shadow-xl">
+        <div className="flex shrink-0 items-center justify-between border-b border-zinc-100 px-6 py-5">
           <h2 className="text-base font-semibold text-brand">{title}</h2>
           <button onClick={onClose} className="text-zinc-400 hover:text-zinc-600">✕</button>
         </div>
-        {children}
+        <div className="overflow-y-auto px-6 py-5">
+          {children}
+        </div>
       </div>
     </div>
   )
@@ -120,7 +122,7 @@ export function CursosTable({ cursos, podeExcluir }: CursosTableProps) {
           <p className="text-zinc-500">Nenhum curso cadastrado.</p>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-xl border border-zinc-200 bg-white">
+        <div className="overflow-x-auto rounded-xl border border-zinc-200 bg-white">
           <table className="w-full text-sm">
             <thead className="border-b border-zinc-100 bg-zinc-50">
               <tr>
