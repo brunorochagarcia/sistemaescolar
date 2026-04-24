@@ -41,15 +41,14 @@ cd sistemaescolar
 npm install
 
 # 2. Variáveis de ambiente
-cp .env.example .env
-# Editar .env com seus valores
+cp .env.example .env.local
+# Editar .env.local com seus valores (DATABASE_URL já aponta para o Docker abaixo)
 
 # 3. Banco de dados (Docker)
-docker run --name escola-pg -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=sistemaescolar -p 5432:5432 -d postgres:16
+docker compose up -d
 
 # 4. Migrations e seed
-npx prisma migrate dev
+npx prisma migrate deploy
 npm run db:seed
 
 # 5. Servidor de desenvolvimento
@@ -60,12 +59,33 @@ Abrir [http://localhost:3000](http://localhost:3000).
 
 ### Usuários do seed
 
-| E-mail | Senha | Role |
-|--------|-------|------|
-| diretor@escola.dev | senha123 | DIRETOR |
-| financeira@escola.dev | senha123 | FINANCEIRA |
-| coordenador@escola.dev | senha123 | COORDENADOR |
-| professor@escola.dev | senha123 | PROFESSOR |
+**Staff** (senha: `senha123`)
+
+| E-mail | Role |
+|--------|------|
+| diretor@escola.dev | DIRETOR |
+| financeira@escola.dev | FINANCEIRA |
+| coordenador@escola.dev | COORDENADOR |
+| professor@escola.dev | PROFESSOR |
+
+**Alunos** (senha: `aluno123`)
+
+| E-mail | Perfil |
+|--------|--------|
+| aluno@escola.dev | aluno de teste básico |
+| aluno01@escola.dev … aluno20@escola.dev | alunos originais |
+
+**Simulação — 300 alunos** no formato `{curso}.{ano}.{nn}@escola.dev` (senha: `aluno123`):
+
+| Exemplo | Perfil |
+|---------|--------|
+| adm.2025.01@escola.dev | regular (nota ≥ 6.5, frequência ≥ 87%, em dia) |
+| cc.2024.14@escola.dev | reprovado por nota (média 2.0–4.5) |
+| design.2023.16@escola.dev | reprovado por falta (50% de ausências) |
+| adm.2026.18@escola.dev | inadimplente (todos os boletos VENCIDO) |
+| cc.2025.19@escola.dev | reprova por nota + inadimplente |
+
+Cursos disponíveis: `adm`, `design`, `cc` · Anos: 2022–2026
 
 ### Testar o cron localmente
 
