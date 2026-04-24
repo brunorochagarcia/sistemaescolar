@@ -76,6 +76,7 @@ model Aluno {
   emailResponsavel String?             // e-mail do responsável para alertas
   nomeResponsavel  String?
   telefone         String?
+  cpf              String?     @unique
   rg               String?
   endereco         String?
   dataNascimento   DateTime?

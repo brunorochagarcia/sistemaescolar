@@ -69,6 +69,13 @@ const ENDERECOS = [
   'Av. Atlântica, 3880, Copacabana, Rio de Janeiro - RJ',
 ]
 
+const CPFS = [
+  '123.456.789-09', '234.567.890-12', '345.678.901-23', '456.789.012-34', '567.890.123-45',
+  '678.901.234-56', '789.012.345-67', '890.123.456-78', '901.234.567-89', '012.345.678-90',
+  '111.222.333-44', '222.333.444-55', '333.444.555-66', '444.555.666-77', '555.666.777-88',
+  '666.777.888-99', '777.888.999-00', '888.999.000-11', '999.000.111-22', '100.200.300-40',
+]
+
 const NOMES_RESPONSAVEIS: (string | null)[] = [
   'Roberto Lima', 'Sandra Mendes', 'José Ferreira da Silva', 'Márcia Rocha',
   'Paulo Carvalho Nunes', 'Cláudia Oliveira', 'Fernando Alves Monteiro', null,
@@ -151,6 +158,12 @@ function gerarEnderecoSim(s: number): string {
   const num    = 10 + (s * 17) % 990
   const cidade = CIDADES_SIM[(s * 3) % CIDADES_SIM.length]
   return `${rua}, ${num}, ${cidade}`
+}
+function gerarCpfSim(s: number): string {
+  const n = String(100000000 + (s * 9973) % 899999999).padStart(9, '0')
+  const d1 = (s * 3 + 7) % 10
+  const d2 = (s * 7 + 3) % 10
+  return `${n.slice(0, 3)}.${n.slice(3, 6)}.${n.slice(6, 9)}-${d1}${d2}`
 }
 function gerarResponsavelSim(s: number): string | null {
   if (s % 7 === 0) return null
@@ -360,11 +373,11 @@ async function main() {
     const materias = i < 10 ? materias1 : materias2
     const aluno    = await prisma.aluno.upsert({
       where:  { email },
-      update: { telefone: TELEFONES[i], rg: RGS[i], endereco: ENDERECOS[i], nomeResponsavel: NOMES_RESPONSAVEIS[i] },
+      update: { cpf: CPFS[i], telefone: TELEFONES[i], rg: RGS[i], endereco: ENDERECOS[i], nomeResponsavel: NOMES_RESPONSAVEIS[i] },
       create: {
         nome: NOMES[i], email, hashedPassword: alunoPassword,
         numeroCadastro: `CAD-2025-${String(i + 2).padStart(5, '0')}`, status: 'ATIVO',
-        telefone: TELEFONES[i], rg: RGS[i], endereco: ENDERECOS[i], nomeResponsavel: NOMES_RESPONSAVEIS[i],
+        cpf: CPFS[i], telefone: TELEFONES[i], rg: RGS[i], endereco: ENDERECOS[i], nomeResponsavel: NOMES_RESPONSAVEIS[i],
       },
     })
     for (const m of materias) {
@@ -452,6 +465,7 @@ async function main() {
               hashedPassword:  alunoPassword,
               numeroCadastro:  cad,
               status:          'ATIVO',
+              cpf:             gerarCpfSim(s),
               telefone:        gerarTelefoneSim(s),
               rg:              gerarRGSim(s),
               endereco:        gerarEnderecoSim(s),

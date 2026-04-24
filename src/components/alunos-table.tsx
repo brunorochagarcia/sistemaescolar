@@ -3,13 +3,14 @@
 import { useState, useTransition } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
-import { editarAluno, criarAlunoAdmin } from '@/lib/actions/aluno'
+import { editarAluno, criarAlunoAdmin, excluirAluno } from '@/lib/actions/aluno'
 import { AlunoActions } from './aluno-actions'
 
 export interface AlunoRow {
   id: string
   nome: string
   email: string | null
+  cpf: string | null
   emailResponsavel: string | null
   nomeResponsavel: string | null
   telefone: string | null
@@ -80,6 +81,7 @@ const inputCls = 'rounded-xl border border-brand/20 px-3 py-2 text-sm outline-no
 function EditarModal({ aluno, onClose }: { aluno: AlunoRow; onClose: () => void }) {
   const router = useRouter()
   const [isPending, startTransition] = useTransition()
+  const [isDeactivating, startDeactivateTransition] = useTransition()
   const [error, setError] = useState<string | null>(null)
 
   function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
@@ -89,6 +91,17 @@ function EditarModal({ aluno, onClose }: { aluno: AlunoRow; onClose: () => void 
     setError(null)
     startTransition(async () => {
       const res = await editarAluno(fd)
+      if (res.ok) { router.refresh(); onClose() }
+      else setError(res.error)
+    })
+  }
+
+  function handleDesativar() {
+    if (!confirm('Desativar este aluno? O histórico será preservado.')) return
+    const fd = new FormData()
+    fd.set('alunoId', aluno.id)
+    startDeactivateTransition(async () => {
+      const res = await excluirAluno(fd)
       if (res.ok) { router.refresh(); onClose() }
       else setError(res.error)
     })
@@ -109,6 +122,9 @@ function EditarModal({ aluno, onClose }: { aluno: AlunoRow; onClose: () => void 
         </Field>
         <Field label="E-mail">
           <input name="email" type="email" required defaultValue={aluno.email ?? ''} className={inputCls} />
+        </Field>
+        <Field label="CPF" optional>
+          <input name="cpf" type="text" defaultValue={aluno.cpf ?? ''} placeholder="000.000.000-00" className={inputCls} />
         </Field>
         <Field label="Data de nascimento" optional>
           <input name="dataNascimento" type="date" defaultValue={aluno.dataNascimento ?? ''} className={inputCls} />
@@ -131,13 +147,25 @@ function EditarModal({ aluno, onClose }: { aluno: AlunoRow; onClose: () => void 
 
         {error && <p className="rounded-xl bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>}
 
-        <div className="mt-1 flex justify-end gap-2">
-          <button type="button" onClick={onClose} className="rounded-xl bg-brand-light px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light/80">
-            Cancelar
-          </button>
-          <button type="submit" disabled={isPending} className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 disabled:opacity-50">
-            {isPending ? 'Salvando...' : 'Salvar'}
-          </button>
+        <div className="mt-1 flex items-center justify-between gap-2">
+          {aluno.status !== 'INATIVO' ? (
+            <button
+              type="button"
+              onClick={handleDesativar}
+              disabled={isDeactivating || isPending}
+              className="text-xs text-red-500 hover:text-red-700 hover:underline disabled:opacity-50"
+            >
+              {isDeactivating ? 'Desativando...' : 'Desativar aluno'}
+            </button>
+          ) : <span />}
+          <div className="flex gap-2">
+            <button type="button" onClick={onClose} className="rounded-xl bg-brand-light px-4 py-2 text-sm font-medium text-brand hover:bg-brand-light/80">
+              Cancelar
+            </button>
+            <button type="submit" disabled={isPending || isDeactivating} className="rounded-xl bg-brand px-4 py-2 text-sm font-medium text-white hover:bg-brand/90 disabled:opacity-50">
+              {isPending ? 'Salvando...' : 'Salvar'}
+            </button>
+          </div>
         </div>
       </form>
     </Modal>
@@ -173,6 +201,9 @@ function CriarModal({ onClose }: { onClose: () => void }) {
         </Field>
         <Field label="Senha de acesso">
           <input name="senha" type="password" required placeholder="mínimo 6 caracteres" className={inputCls} />
+        </Field>
+        <Field label="CPF" optional>
+          <input name="cpf" type="text" placeholder="000.000.000-00" className={inputCls} />
         </Field>
         <Field label="Data de nascimento" optional>
           <input name="dataNascimento" type="date" className={inputCls} />
@@ -254,7 +285,9 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
         (a) =>
           a.nome.toLowerCase().includes(termo) ||
           (a.email ?? '').toLowerCase().includes(termo) ||
-          (a.numeroCadastro ?? '').toLowerCase().includes(termo),
+          (a.numeroCadastro ?? '').toLowerCase().includes(termo) ||
+          (a.cpf ?? '').replace(/\D/g, '').includes(termo.replace(/\D/g, '')) ||
+          (a.cpf ?? '').toLowerCase().includes(termo),
       )
     : alunos
 
@@ -306,7 +339,7 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
       <div className="mb-4">
         <input
           type="search"
-          placeholder="Buscar por nome, e-mail ou nº cadastro..."
+          placeholder="Buscar por nome, e-mail, CPF ou nº cadastro..."
           value={busca}
           onChange={(e) => { setBusca(e.target.value); setPage(1) }}
           className="w-full rounded-xl border border-zinc-200 bg-white px-4 py-2 text-sm text-zinc-900 placeholder-zinc-400 outline-none focus:border-zinc-400 focus:ring-1 focus:ring-zinc-200 sm:max-w-sm"
@@ -336,6 +369,8 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
                       Nome <SortIcon col="nome" />
                     </button>
                   </th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-500">Matrícula</th>
+                  <th className="px-4 py-3 text-left font-medium text-zinc-500">CPF</th>
                   <th className="px-4 py-3 text-left">
                     <button onClick={() => toggleSort('cursos')} className="flex items-center font-medium text-zinc-500 hover:text-zinc-900">
                       Curso <SortIcon col="cursos" />
@@ -358,6 +393,12 @@ export function AlunosTable({ alunos }: AlunosTableProps) {
                         <Link href={`/alunos/${aluno.id}`} title={aluno.nome} className="text-zinc-900 hover:underline">
                           {primeiroEUltimoNome(aluno.nome)}
                         </Link>
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-500">
+                        {aluno.numeroCadastro ?? '—'}
+                      </td>
+                      <td className="px-4 py-3 font-mono text-xs text-zinc-500">
+                        {aluno.cpf ?? '—'}
                       </td>
                       <td className="px-4 py-3 text-zinc-500">
                         {aluno.cursos.length > 0 ? aluno.cursos.join(', ') : '—'}

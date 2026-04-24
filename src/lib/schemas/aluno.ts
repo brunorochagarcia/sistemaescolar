@@ -28,6 +28,7 @@ const camposAluno = {
   email:            z.email('E-mail inválido'),
   emailResponsavel: z.string().transform(strOpc).pipe(z.email('E-mail do responsável inválido').optional()),
   nomeResponsavel:  z.string().transform(strOpc).pipe(z.string().max(120).optional()),
+  cpf:              z.string().transform(strOpc).pipe(z.string().max(14, 'CPF muito longo').optional()),
   telefone:         z.string().transform(strOpc).pipe(z.string().max(20, 'Telefone muito longo').optional()),
   rg:               z.string().transform(strOpc).pipe(z.string().max(20, 'RG muito longo').optional()),
   endereco:         z.string().transform(strOpc).pipe(z.string().max(255, 'Endereço muito longo').optional()),

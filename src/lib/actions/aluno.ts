@@ -181,6 +181,7 @@ export async function editarAluno(formData: FormData): Promise<ActionResult> {
     alunoId:          formData.get('alunoId'),
     nome:             formData.get('nome'),
     email:            formData.get('email'),
+    cpf:              formData.get('cpf') ?? '',
     emailResponsavel: formData.get('emailResponsavel') ?? '',
     nomeResponsavel:  formData.get('nomeResponsavel') ?? '',
     telefone:         formData.get('telefone') ?? '',
@@ -190,7 +191,7 @@ export async function editarAluno(formData: FormData): Promise<ActionResult> {
   })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' }
 
-  const { alunoId, nome, email, emailResponsavel, nomeResponsavel, telefone, rg, endereco, dataNascimento } = parsed.data
+  const { alunoId, nome, email, cpf, emailResponsavel, nomeResponsavel, telefone, rg, endereco, dataNascimento } = parsed.data
 
   const existe = await prisma.aluno.findUnique({ where: { id: alunoId }, select: { id: true } })
   if (!existe) return { ok: false, error: 'Aluno não encontrado.' }
@@ -201,6 +202,7 @@ export async function editarAluno(formData: FormData): Promise<ActionResult> {
       data: {
         nome,
         email,
+        cpf:              cpf              ?? null,
         emailResponsavel: emailResponsavel ?? null,
         nomeResponsavel:  nomeResponsavel  ?? null,
         telefone:         telefone         ?? null,
@@ -231,6 +233,7 @@ export async function criarAlunoAdmin(
     nome:             formData.get('nome'),
     email:            formData.get('email'),
     senha:            formData.get('senha'),
+    cpf:              formData.get('cpf') ?? '',
     emailResponsavel: formData.get('emailResponsavel') ?? '',
     nomeResponsavel:  formData.get('nomeResponsavel') ?? '',
     telefone:         formData.get('telefone') ?? '',
@@ -240,7 +243,7 @@ export async function criarAlunoAdmin(
   })
   if (!parsed.success) return { ok: false, error: parsed.error.issues[0]?.message ?? 'Dados inválidos.' }
 
-  const { nome, email, senha, emailResponsavel, nomeResponsavel, telefone, rg, endereco, dataNascimento } = parsed.data
+  const { nome, email, senha, cpf, emailResponsavel, nomeResponsavel, telefone, rg, endereco, dataNascimento } = parsed.data
   const hashedPassword = await bcrypt.hash(senha, 10)
 
   try {
@@ -251,6 +254,7 @@ export async function criarAlunoAdmin(
       const aluno = await tx.aluno.create({
         data: {
           nome, email, hashedPassword, status: 'ATIVO', numeroCadastro,
+          cpf:              cpf              ?? null,
           emailResponsavel: emailResponsavel ?? null,
           nomeResponsavel:  nomeResponsavel  ?? null,
           telefone:         telefone         ?? null,
