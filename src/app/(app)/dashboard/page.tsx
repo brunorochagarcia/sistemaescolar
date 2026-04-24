@@ -14,7 +14,7 @@ const getDiretorKPIs = unstable_cache(
     const fimMes   = new Date(fimMesISO)
     const [
       totalAtivos, totalPendentes, inadimplentes,
-      totalVencidoAgg, receitaMesAgg, receitaPrevistaAgg, cursosData,
+      totalVencidoAgg, receitaMesAgg, receitaPrevistaAgg, mediaGeralAgg, cursosData,
     ] = await Promise.all([
       prisma.aluno.count({ where: { status: 'ATIVO' } }),
       prisma.aluno.count({ where: { status: 'PENDENTE' } }),
@@ -22,6 +22,7 @@ const getDiretorKPIs = unstable_cache(
       prisma.boleto.aggregate({ _sum: { valor: true }, where: { status: 'VENCIDO' } }),
       prisma.boleto.aggregate({ _sum: { valor: true }, where: { status: 'PAGO', dataPagamento: { gte: inicioMes, lt: fimMes } } }),
       prisma.boleto.aggregate({ _sum: { valor: true }, where: { mesReferencia: { gte: inicioMes, lt: fimMes } } }),
+      prisma.nota.aggregate({ _avg: { valor: true } }),
       prisma.curso.findMany({
         where: { status: 'ATIVO' },
         orderBy: { nome: 'asc' },
@@ -32,7 +33,7 @@ const getDiretorKPIs = unstable_cache(
         },
       }),
     ])
-    return { totalAtivos, totalPendentes, inadimplentes, totalVencidoAgg, receitaMesAgg, receitaPrevistaAgg, cursosData }
+    return { totalAtivos, totalPendentes, inadimplentes, totalVencidoAgg, receitaMesAgg, receitaPrevistaAgg, mediaGeralAgg, cursosData }
   },
   ['dashboard-diretor'],
   { revalidate: 60, tags: ['dashboard'] },
@@ -126,10 +127,11 @@ export default async function DashboardPage() {
       }),
     ])
 
-    const { totalAtivos, totalPendentes, inadimplentes, totalVencidoAgg, receitaMesAgg, receitaPrevistaAgg, cursosData } = kpis
-    const totalVencido    = Number(totalVencidoAgg._sum.valor  ?? 0)
-    const receitaMes      = Number(receitaMesAgg._sum.valor    ?? 0)
+    const { totalAtivos, totalPendentes, inadimplentes, totalVencidoAgg, receitaMesAgg, receitaPrevistaAgg, mediaGeralAgg, cursosData } = kpis
+    const totalVencido    = Number(totalVencidoAgg._sum.valor    ?? 0)
+    const receitaMes      = Number(receitaMesAgg._sum.valor      ?? 0)
     const receitaPrevista = Number(receitaPrevistaAgg._sum.valor ?? 0)
+    const mediaGeral      = mediaGeralAgg._avg.valor != null ? Number(mediaGeralAgg._avg.valor) : null
 
     const cursos = cursosData.map(c => ({
       id: c.id, nome: c.nome,
@@ -145,24 +147,29 @@ export default async function DashboardPage() {
 
         <section>
           <SectionTitle>Acadêmico</SectionTitle>
-          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-3">
             <StatCard label="Alunos ativos" value={totalAtivos} />
             <StatCard label="Aguardando aprovação" value={totalPendentes} variant={totalPendentes > 0 ? 'warning' : 'default'} href="/cadastros/alunos" />
-            <StatCard label="Inadimplentes" value={inadimplentes} variant={inadimplentes > 0 ? 'danger' : 'default'} href="/financeiro?status=VENCIDO" />
-            <StatCard label="Total em atraso" value={brl(totalVencido)} variant={totalVencido > 0 ? 'danger' : 'default'} href="/financeiro?status=VENCIDO" />
+            <StatCard
+              label="Média geral das avaliações"
+              value={mediaGeral !== null ? mediaGeral.toFixed(1) : '—'}
+              variant={mediaGeral !== null && mediaGeral < 5 ? 'danger' : mediaGeral !== null && mediaGeral < 7 ? 'warning' : 'default'}
+            />
           </div>
         </section>
 
         <section>
           <SectionTitle>Financeiro — {mesLabel}</SectionTitle>
-          <div className="grid grid-cols-2 gap-4">
+          <div className="grid grid-cols-2 gap-4 sm:grid-cols-4">
+            <StatCard label="Inadimplentes" value={inadimplentes} variant={inadimplentes > 0 ? 'danger' : 'default'} href="/financeiro?status=VENCIDO" />
+            <StatCard label="Total em atraso" value={brl(totalVencido)} variant={totalVencido > 0 ? 'danger' : 'default'} href="/financeiro?status=VENCIDO" />
             <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Receita confirmada</p>
-              <p className="mt-1 text-3xl font-bold text-zinc-900">{brl(receitaMes)}</p>
+              <p className="mt-1 text-2xl font-bold text-zinc-900">{brl(receitaMes)}</p>
             </div>
             <div className="rounded-xl border border-zinc-200 bg-white px-5 py-4">
               <p className="text-xs font-medium uppercase tracking-wide text-zinc-400">Receita prevista</p>
-              <p className="mt-1 text-3xl font-bold text-zinc-400">{brl(receitaPrevista)}</p>
+              <p className="mt-1 text-2xl font-bold text-zinc-400">{brl(receitaPrevista)}</p>
               {receitaPrevista > 0 && (
                 <p className="mt-1 text-xs text-zinc-400">
                   {((receitaMes / receitaPrevista) * 100).toFixed(0)}% recebido
